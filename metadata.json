@@ -1,0 +1,8 @@
+{
+  "name": "Stickflow",
+  "description": "An offline-first, multilingual POS + manufacturing management app for incense stick production, designed for ease of use and complete control over inventory, billing, manufacturing, and supplier/customer relationships.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
