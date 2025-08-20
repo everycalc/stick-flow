@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { db } from '../services/db';
 import { useTranslation } from '../hooks/useTranslation';
 import { User, Briefcase, ShoppingCart, FileText, CheckSquare, X, PlusCircle } from 'lucide-react';
-import { Sale, Customer, DistributorSettlement } from '../types';
+import { Sale, Customer, DistributorSettlement, Expense, ExpenseCategory } from '../types';
 import CustomerEditorModal from '../components/CustomerEditorModal';
 
 const Distributors: React.FC = () => {
@@ -26,18 +26,56 @@ const Distributors: React.FC = () => {
         setActiveTab('sales');
     };
     
-    const handleSaveSettlement = (newSettlement: DistributorSettlement) => {
-        // 1. Save the new settlement record
+    const handleSaveSettlement = (newSettlement: DistributorSettlement, appliedExpenseIds: string[]) => {
+        const allCustomers = db.getCustomers();
+        const distributorIndex = allCustomers.findIndex(c => c.id === newSettlement.distributorId);
+    
+        if (distributorIndex > -1) {
+            const distributor = allCustomers[distributorIndex];
+            let newOutstanding = distributor.outstandingBalance;
+            let newPending = distributor.pendingPayment;
+    
+            // 1. Reduce their own debt by the amount cleared in the settlement
+            newOutstanding -= (newSettlement.appliedOutstandingBalance || 0);
+    
+            // 2. Adjust balances based on the final net settlement amount
+            const finalAmount = newSettlement.settlementAmount;
+            if (finalAmount > 0) { // We still owe them, add to pending payment
+                newPending += finalAmount;
+            } else if (finalAmount < 0) { // They still owe us (e.g., advances > margin), add to their outstanding debt
+                newOutstanding += Math.abs(finalAmount);
+            }
+    
+            allCustomers[distributorIndex] = {
+                ...distributor,
+                outstandingBalance: newOutstanding,
+                pendingPayment: newPending,
+            };
+    
+            db.setCustomers(allCustomers);
+            setCustomers(allCustomers);
+        }
+    
+        // 3. Save the new settlement record
         const newSettlements = [...settlements, newSettlement];
         setSettlements(newSettlements);
         db.setDistributorSettlements(newSettlements);
-
-        // 2. Update the settled sales records
+    
+        // 4. Update the settled sales records
         const updatedSales = sales.map(s => 
             newSettlement.saleIds.includes(s.id) ? { ...s, settlementId: newSettlement.id } : s
         );
         setSales(updatedSales);
         db.setSales(updatedSales);
+    
+        // 5. Mark applied advance payments (expenses) as settled
+        if (appliedExpenseIds.length > 0) {
+            const allExpenses = db.getExpenses();
+            const updatedExpenses = allExpenses.map(exp => 
+                appliedExpenseIds.includes(exp.id) ? { ...exp, settlementId: newSettlement.id } : exp
+            );
+            db.setExpenses(updatedExpenses);
+        }
         
         setIsSettlementModalOpen(false);
     };
@@ -203,18 +241,31 @@ const DistributorSettlementsTab: React.FC<{ distributor: Customer, sales: Sale[]
 };
 
 // SettlementModal
-const SettlementModal: React.FC<{ distributor: Customer, sales: Sale[], onSave: (settlement: DistributorSettlement) => void, onClose: () => void }> = ({ distributor, sales, onSave, onClose }) => {
+const SettlementModal: React.FC<{ distributor: Customer, sales: Sale[], onSave: (settlement: DistributorSettlement, appliedExpenseIds: string[]) => void, onClose: () => void }> = ({ distributor, sales, onSave, onClose }) => {
     const { t } = useTranslation();
     const [selectedSaleIds, setSelectedSaleIds] = useState<string[]>([]);
+    const [selectedExpenseIds, setSelectedExpenseIds] = useState<string[]>([]);
     
     const unsettledSales = useMemo(() => {
         return sales.filter(s => s.distributorId === distributor.id && !s.settlementId);
     }, [sales, distributor.id]);
 
+    const unsettledExpenses = useMemo(() => {
+        return db.getExpenses().filter(e => 
+            e.category === ExpenseCategory.DistributorPayment &&
+            e.distributorId === distributor.id && 
+            !e.settlementId
+        );
+    }, [distributor.id]);
+
     const handleToggleSale = (saleId: string) => {
         setSelectedSaleIds(prev => prev.includes(saleId) ? prev.filter(id => id !== saleId) : [...prev, saleId]);
     };
     
+    const handleToggleExpense = (expenseId: string) => {
+        setSelectedExpenseIds(prev => prev.includes(expenseId) ? prev.filter(id => id !== expenseId) : [...prev, expenseId]);
+    };
+
     const salesForSettlement = useMemo(() => {
         return unsettledSales.filter(s => selectedSaleIds.includes(s.id));
     }, [unsettledSales, selectedSaleIds]);
@@ -235,6 +286,19 @@ const SettlementModal: React.FC<{ distributor: Customer, sales: Sale[], onSave: 
         return { totalAmountCollected: collected, amountBilledToDistributor: billed, finalMargin: margin };
     }, [salesForSettlement]);
 
+    const totalAdjustments = useMemo(() => { // Advance payments
+        return unsettledExpenses
+            .filter(e => selectedExpenseIds.includes(e.id))
+            .reduce((sum, e) => sum + e.amount, 0);
+    }, [unsettledExpenses, selectedExpenseIds]);
+
+    // Core logic update: Settle outstanding balance first
+    const amountAfterAdvances = finalMargin - totalAdjustments;
+    const appliedOutstandingBalance = Math.min(distributor.outstandingBalance, Math.max(0, amountAfterAdvances));
+    const netSettlementAmount = amountAfterAdvances - appliedOutstandingBalance;
+    const isPayable = netSettlementAmount >= 0;
+
+
     const handleConfirmSettlement = () => {
         if (selectedSaleIds.length === 0) return;
         
@@ -248,14 +312,15 @@ const SettlementModal: React.FC<{ distributor: Customer, sales: Sale[], onSave: 
             periodStartDate: startDate,
             periodEndDate: endDate,
             settledOn: new Date().toISOString().split('T')[0],
-            totalSalesValue: totalAmountCollected, // This now represents collected amount
+            totalSalesValue: totalAmountCollected,
             totalDistributorValue: amountBilledToDistributor,
             finalMargin: finalMargin,
-            adjustments: 0,
-            settlementAmount: finalMargin, // Assuming payout is the margin for now
+            adjustments: totalAdjustments,
+            appliedOutstandingBalance: appliedOutstandingBalance,
+            settlementAmount: netSettlementAmount,
             saleIds: selectedSaleIds,
         };
-        onSave(newSettlement);
+        onSave(newSettlement, selectedExpenseIds);
     };
 
     return (
@@ -265,25 +330,49 @@ const SettlementModal: React.FC<{ distributor: Customer, sales: Sale[], onSave: 
                     <h3 className="text-lg font-semibold">New Settlement for {distributor.name}</h3>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"><X size={20}/></button>
                 </div>
-                <div className="flex-grow overflow-y-auto pr-2">
-                    <h4 className="font-medium mb-2">Select Unsettled Sales:</h4>
-                    <div className="space-y-2 max-h-64 overflow-y-auto border border-light-outline/50 dark:border-dark-outline/50 rounded-lg p-2">
-                         {unsettledSales.map(sale => (
-                            <label key={sale.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
-                                <input type="checkbox" checked={selectedSaleIds.includes(sale.id)} onChange={() => handleToggleSale(sale.id)} className="h-4 w-4 rounded text-light-primary focus:ring-light-primary"/>
-                                <span>{sale.invoiceNumber} - {sale.date} - ₹{sale.totalAmount.toFixed(2)}</span>
-                            </label>
-                        ))}
+                <div className="flex-grow overflow-y-auto pr-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 className="font-medium mb-2">Select Unsettled Sales:</h4>
+                        <div className="space-y-2 max-h-64 overflow-y-auto border border-light-outline/50 dark:border-dark-outline/50 rounded-lg p-2">
+                             {unsettledSales.length > 0 ? unsettledSales.map(sale => (
+                                <label key={sale.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+                                    <input type="checkbox" checked={selectedSaleIds.includes(sale.id)} onChange={() => handleToggleSale(sale.id)} className="h-4 w-4 rounded text-light-primary focus:ring-light-primary"/>
+                                    <span>{sale.invoiceNumber} - {sale.date} - ₹{sale.totalAmount.toFixed(2)}</span>
+                                </label>
+                            )) : <p className="p-4 text-center text-sm text-light-text-secondary dark:text-dark-text-secondary">No unsettled sales.</p>}
+                        </div>
                     </div>
-                     <div className="mt-6 p-4 bg-black/5 dark:bg-white/5 rounded-lg space-y-2">
-                        <div className="flex justify-between"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('distributors.settlement.collected')}:</span> <span className="font-semibold">₹{totalAmountCollected.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('distributors.settlement.billed')}:</span> <span className="font-semibold">₹{amountBilledToDistributor.toFixed(2)}</span></div>
-                        <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t border-light-outline/50 dark:border-dark-outline/50"><span>{t('distributors.settlement.margin')}:</span> <span>₹{finalMargin.toFixed(2)}</span></div>
+                     <div>
+                        <h4 className="font-medium mb-2">Apply Advance Payments:</h4>
+                        <div className="space-y-2 max-h-64 overflow-y-auto border border-light-outline/50 dark:border-dark-outline/50 rounded-lg p-2">
+                            {unsettledExpenses.length > 0 ? unsettledExpenses.map(exp => (
+                                <label key={exp.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+                                    <input type="checkbox" checked={selectedExpenseIds.includes(exp.id)} onChange={() => handleToggleExpense(exp.id)} className="h-4 w-4 rounded text-light-primary focus:ring-light-primary"/>
+                                    <span>{exp.title} - {exp.date} - ₹{exp.amount.toFixed(2)}</span>
+                                </label>
+                            )) : <p className="p-4 text-center text-sm text-light-text-secondary dark:text-dark-text-secondary">No advance payments found.</p>}
+                        </div>
+                    </div>
+
+                </div>
+                 <div className="mt-6 p-4 bg-black/5 dark:bg-white/5 rounded-lg space-y-2">
+                    <div className="flex justify-between"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('distributors.settlement.collected')}:</span> <span className="font-semibold">₹{totalAmountCollected.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('distributors.settlement.billed')}:</span> <span className="font-semibold">₹{amountBilledToDistributor.toFixed(2)}</span></div>
+                    <div className="border-t border-light-outline/50 dark:border-dark-outline/50 my-1"></div>
+                    <div className="flex justify-between font-medium"><span className="text-light-text-secondary dark:text-dark-text-secondary">Margin from Sales:</span> <span className="font-semibold">₹{finalMargin.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span className="text-light-text-secondary dark:text-dark-text-secondary">Less Applied Advances:</span> <span className="font-semibold text-red-600 dark:text-red-400">- ₹{totalAdjustments.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span className="text-light-text-secondary dark:text-dark-text-secondary">Less Own Outstanding Balance:</span> <span className="font-semibold text-red-600 dark:text-red-400">- ₹{appliedOutstandingBalance.toFixed(2)}</span></div>
+                    <div className="border-t-2 border-light-outline/50 dark:border-dark-outline/50 my-1"></div>
+                    <div className="flex justify-between font-bold text-lg mt-2 pt-2">
+                        <span>{isPayable ? 'Net Payable to Distributor' : 'Net Receivable from Distributor'}:</span> 
+                        <span className={isPayable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                           ₹{Math.abs(netSettlementAmount).toFixed(2)}
+                        </span>
                     </div>
                 </div>
                  <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-light-outline/50 dark:border-dark-outline/50">
                     <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('cancel')}</button>
-                    <button onClick={handleConfirmSettlement} disabled={selectedSaleIds.length === 0} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black disabled:opacity-50">{t('confirm')}</button>
+                    <button onClick={handleConfirmSettlement} disabled={selectedSaleIds.length === 0} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black disabled:opacity-50">Confirm & Settle</button>
                 </div>
             </div>
         </div>

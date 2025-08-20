@@ -11,7 +11,7 @@ interface CustomerEditorModalProps {
 
 const CustomerEditorModal: React.FC<CustomerEditorModalProps> = ({ customer, onSave, onClose, defaultIsDistributor = false }) => {
     const distributors = db.getCustomers().filter(c => c.isDistributor);
-    const [formData, setFormData] = useState<Omit<Customer, 'id' | 'outstandingBalance'>>({
+    const [formData, setFormData] = useState({
         name: customer?.name || '',
         contact: customer?.contact || '',
         address: customer?.address || '',
@@ -39,6 +39,7 @@ const CustomerEditorModal: React.FC<CustomerEditorModalProps> = ({ customer, onS
             ...formData,
             id: customer?.id || `cust_${Date.now()}`,
             outstandingBalance: customer?.outstandingBalance || 0,
+            pendingPayment: customer?.pendingPayment || 0,
         });
     };
 

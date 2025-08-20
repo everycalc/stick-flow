@@ -53,11 +53,12 @@ const CalculatorPage: React.FC = () => {
         setEditingRecipeId(recipe.id);
         setRecipeName(recipe.name);
         
-        // Convert recipe items back to grams for the calculator
+        // Convert recipe items back to grams for the calculator, normalized for a 1kg batch
+        const batchWeight = recipe.yieldQuantity || 1; // Default to 1kg if not specified
         const formIngredients: Ingredient[] = recipe.items.map((item, index) => ({
             id: Date.now() + index,
             rawMaterialId: item.rawMaterialId,
-            quantity: item.quantityPerUnit * 1000, // Assuming a 1kg batch reference
+            quantity: item.quantityPerUnit * (batchWeight * 1000),
         }));
         setIngredients(formIngredients);
     };
@@ -105,6 +106,8 @@ const CalculatorPage: React.FC = () => {
                 name: recipeName,
                 finishedGoodId: recipes.find(r => r.id === editingRecipeId)!.finishedGoodId,
                 items: updatedRecipeItems,
+                yieldQuantity: totalBatchWeightKg,
+                yieldUnit: 'kg',
             };
             const updatedRecipes = recipes.map(r => r.id === editingRecipeId ? updatedRecipe : r);
             setRecipes(updatedRecipes);

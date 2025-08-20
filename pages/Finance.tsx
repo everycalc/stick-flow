@@ -109,11 +109,24 @@ const Finance: React.FC = () => {
     }, [filteredData, products, recipes]);
 
     const handleSaveExpense = (expense: Expense) => {
-        const updatedExpenses = expense.id.startsWith('exp_')
+        // Save expense first
+        const isNew = !expenses.some(e => e.id === expense.id);
+        const updatedExpenses = isNew
             ? [...expenses, expense]
             : expenses.map(e => e.id === expense.id ? expense : e);
         setExpenses(updatedExpenses);
         db.setExpenses(updatedExpenses);
+        
+        // If it's a distributor payment, update their pending payment balance
+        if (expense.category === ExpenseCategory.DistributorPayment && expense.distributorId) {
+            const customers = db.getCustomers();
+            const customerIndex = customers.findIndex(c => c.id === expense.distributorId);
+            if (customerIndex > -1) {
+                customers[customerIndex].pendingPayment = Math.max(0, customers[customerIndex].pendingPayment - expense.amount);
+                db.setCustomers(customers);
+            }
+        }
+
         setEditingExpense(null);
         setIsExpenseModalOpen(false);
     };

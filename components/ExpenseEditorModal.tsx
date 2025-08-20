@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Expense, ExpenseCategory } from '../types';
+import { Expense, ExpenseCategory, Customer } from '../types';
 import { X } from 'lucide-react';
+import { db } from '../services/db';
 
 interface ExpenseEditorModalProps {
     expense: Expense | null;
@@ -9,12 +10,15 @@ interface ExpenseEditorModalProps {
 }
 
 const ExpenseEditorModal: React.FC<ExpenseEditorModalProps> = ({ expense, onSave, onClose }) => {
+    const [distributors, setDistributors] = useState<Customer[]>(() => db.getCustomers().filter(c => c.isDistributor));
+    
     const [formData, setFormData] = useState({
         title: expense?.title || '',
         amount: expense?.amount || 0,
         category: expense?.category || ExpenseCategory.Other,
         date: expense?.date || new Date().toISOString().split('T')[0],
         notes: expense?.notes || '',
+        distributorId: expense?.distributorId || '',
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -28,9 +32,15 @@ const ExpenseEditorModal: React.FC<ExpenseEditorModalProps> = ({ expense, onSave
             alert("Please enter a title and a valid amount.");
             return;
         }
+        if (formData.category === ExpenseCategory.DistributorPayment && !formData.distributorId) {
+            alert("Please select a distributor for this payment.");
+            return;
+        }
+
         onSave({
             ...formData,
             id: expense?.id || `exp_${Date.now()}`,
+            distributorId: formData.category === ExpenseCategory.DistributorPayment ? formData.distributorId : undefined,
         });
     };
 
@@ -59,7 +69,7 @@ const ExpenseEditorModal: React.FC<ExpenseEditorModalProps> = ({ expense, onSave
                             <label className="block text-sm font-medium mb-1">Category</label>
                             <select name="category" value={formData.category} onChange={handleChange} className={inputClass}>
                                 {Object.values(ExpenseCategory).map(cat => (
-                                    <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                                    <option key={cat} value={cat}>{cat.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
                                 ))}
                             </select>
                         </div>
@@ -68,6 +78,19 @@ const ExpenseEditorModal: React.FC<ExpenseEditorModalProps> = ({ expense, onSave
                             <input type="date" name="date" value={formData.date} onChange={handleChange} className={inputClass} />
                         </div>
                     </div>
+
+                    {formData.category === ExpenseCategory.DistributorPayment && (
+                         <div>
+                            <label className="block text-sm font-medium mb-1">Distributor</label>
+                            <select name="distributorId" value={formData.distributorId} onChange={handleChange} className={inputClass} required>
+                                <option value="">Select a distributor</option>
+                                {distributors.map(d => (
+                                    <option key={d.id} value={d.id}>{d.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <div>
                         <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
                         <textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} className={inputClass}></textarea>

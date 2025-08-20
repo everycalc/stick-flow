@@ -107,7 +107,8 @@ export interface Customer {
     gstin?: string;
     creditLimit: number;
     creditDays: number;
-    outstandingBalance: number;
+    outstandingBalance: number; // Money customer owes us
+    pendingPayment: number; // Money we owe the customer (for distributors)
     isDistributor?: boolean;
     affiliatedDistributorId?: string;
     isDeleted?: boolean;
@@ -266,6 +267,7 @@ export interface DistributorSettlement {
     totalDistributorValue: number;
     finalMargin: number;
     adjustments: number;
+    appliedOutstandingBalance?: number;
     settlementAmount: number;
     saleIds: string[];
 }
@@ -277,6 +279,7 @@ export enum ExpenseCategory {
     House = 'house',
     Utilities = 'utilities',
     Marketing = 'marketing',
+    DistributorPayment = 'distributor_payment',
     Other = 'other',
 }
 
@@ -287,4 +290,6 @@ export interface Expense {
     category: ExpenseCategory;
     date: string; // YYYY-MM-DD
     notes?: string;
+    distributorId?: string;
+    settlementId?: string;
 }

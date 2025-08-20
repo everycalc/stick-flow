@@ -116,7 +116,11 @@ const InvoiceEditorModal: React.FC<{
                     name: newCustomerData.name,
                     contact: newCustomerData.contact,
                     address: newCustomerData.address,
-                    outstandingBalance: 0, creditDays: 0, creditLimit: 0, isDistributor: false
+                    outstandingBalance: 0,
+                    pendingPayment: 0,
+                    creditDays: 0,
+                    creditLimit: 0,
+                    isDistributor: false,
                 };
             }
         } else {

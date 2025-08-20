@@ -118,7 +118,7 @@ const Customers: React.FC = () => {
                                     <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Name</th>
                                     <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Contact</th>
                                     <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Address</th>
-                                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Outstanding</th>
+                                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Balance</th>
                                     <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Type</th>
                                     <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -129,7 +129,11 @@ const Customers: React.FC = () => {
                                         <td className="p-3 whitespace-nowrap font-medium">{customer.name}</td>
                                         <td className="p-3 whitespace-nowrap">{customer.contact}</td>
                                         <td className="p-3 whitespace-nowrap max-w-xs truncate">{customer.address}</td>
-                                        <td className="p-3 whitespace-nowrap">₹{customer.outstandingBalance.toFixed(2)}</td>
+                                        <td className="p-3 whitespace-nowrap font-semibold">
+                                            {customer.outstandingBalance > 0 && <span className="text-red-600 dark:text-red-400">₹{customer.outstandingBalance.toFixed(2)} Cr.</span>}
+                                            {customer.pendingPayment > 0 && <span className="text-green-600 dark:text-green-400">₹{customer.pendingPayment.toFixed(2)} Dr.</span>}
+                                            {customer.outstandingBalance === 0 && customer.pendingPayment === 0 && <span>₹0.00</span>}
+                                        </td>
                                         <td className="p-3 whitespace-nowrap">
                                             {customer.isDistributor ? 
                                                 <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-800 dark:text-blue-200">Distributor</span>
