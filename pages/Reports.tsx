@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { db } from '../services/db';
-import { useTranslation } from '../hooks/useTranslation';
 import { Customer, Product, Sale } from '../types';
 
 const Reports: React.FC = () => {
-    const { t } = useTranslation();
     const products = db.getProducts();
     const customers = db.getCustomers();
     const sales = db.getSales();
@@ -54,7 +52,7 @@ const Reports: React.FC = () => {
             </div>
             
             <div className="bg-light-surface dark:bg-dark-surface p-4 sm:p-6 rounded-2xl shadow-md">
-                 <h2 className="text-xl font-semibold mb-4">{t('reports.stock_valuation')}</h2>
+                 <h2 className="text-xl font-semibold mb-4">Stock Valuation Report</h2>
                  <div className="overflow-x-auto">
                     <table className="min-w-full">
                         <thead><tr className="border-b border-light-outline/50 dark:border-dark-outline/50"><th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Product</th><th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Quantity</th><th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Purchase Price</th><th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Value</th></tr></thead>
@@ -69,7 +67,7 @@ const Reports: React.FC = () => {
             </div>
 
             <div className="bg-light-surface dark:bg-dark-surface p-4 sm:p-6 rounded-2xl shadow-md">
-                 <h2 className="text-xl font-semibold mb-4">{t('reports.customer_ledger')}</h2>
+                 <h2 className="text-xl font-semibold mb-4">Customer Payment Ledger</h2>
                  <div className="flex flex-wrap items-center gap-4 mb-4">
                      <select onChange={e => setSelectedCustomer(customers.find(c => c.id === e.target.value) || null)} className="flex-grow rounded-lg border border-light-outline dark:border-dark-outline bg-transparent p-2.5 focus:ring-2 focus:ring-light-primary dark:focus:ring-dark-primary focus:outline-none">
                          <option value="">Select Customer</option>

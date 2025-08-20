@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Info, X } from 'lucide-react';
 import { db } from '../services/db';
 import { Alert, ItemType } from '../types';
-import { useTranslation } from '../hooks/useTranslation';
 
 const AlertBar: React.FC = () => {
-    const { t } = useTranslation();
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
     const [currentAlertIndex, setCurrentAlertIndex] = useState(0);
@@ -55,11 +53,11 @@ Please place an order for the following item:
 - Expected Delivery Date: ${deliveryDate.toLocaleDateString()}
 
 Thank you,
-${t('app.name')}
+Stickflow
         `.trim();
 
         navigator.clipboard.writeText(message).then(() => {
-            alert(t('alert.order_message_copied'));
+            alert('Order message copied to clipboard!');
         });
     };
 
@@ -96,7 +94,7 @@ ${t('app.name')}
                         onClick={() => handlePrepareOrder(currentAlert.relatedId)} 
                         className="ml-4 text-xs bg-light-primary text-white dark:bg-dark-primary dark:text-black px-3 py-1 rounded-full font-semibold"
                     >
-                        {t('alert.prepare_order')}
+                        Prepare Order
                     </button>
                 )}
             </div>

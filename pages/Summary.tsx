@@ -2,23 +2,21 @@ import React from 'react';
 import { Alert, UserRole } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/db';
-import { useTranslation } from '../hooks/useTranslation';
 import { useNavigate } from 'react-router-dom';
 import { Package, Users, DollarSign, Truck, AlertCircle } from 'lucide-react';
 import Calculator from '../components/Calculator';
 
-const getGreeting = (t: (key: string) => string): string => {
+const getGreeting = (): string => {
     const hour = new Date().getHours();
-    if (hour < 12) return t('good.morning');
-    if (hour < 18) return t('good.afternoon');
-    return t('good.evening');
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
 };
 
 const Summary: React.FC = () => {
-    const { t } = useTranslation();
     const { user } = useAuth();
     const navigate = useNavigate();
-    const greeting = getGreeting(t);
+    const greeting = getGreeting();
 
     const alerts = db.getAlerts();
     const lowStockAlerts = alerts.filter(a => a.type === 'low_stock');
@@ -57,37 +55,37 @@ const Summary: React.FC = () => {
             <h1 className="text-3xl font-bold">{`${greeting}, ${user?.name}!`}</h1>
              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 <SummaryCard 
-                    title={t('summary.low_stock')}
+                    title={'Low Stock Items'}
                     count={lowStockAlerts.length}
                     icon={<Package size={22} />}
                     color="bg-yellow-500/20 text-yellow-700 dark:text-yellow-300"
-                    actionText={t('summary.view_all')}
+                    actionText={'View All'}
                     onActionClick={() => navigate('/inventory')}
                 />
                  <SummaryCard 
-                    title={t('summary.pending_customer_payments')}
+                    title={'Pending Customer Payments'}
                     count={customerDues.length}
                     icon={<Users size={22} />}
                     color="bg-red-500/20 text-red-700 dark:text-red-300"
-                    actionText={t('summary.view_all')}
+                    actionText={'View All'}
                     onActionClick={() => navigate('/reports')}
                 />
                 {user?.role === UserRole.Admin && (
                     <>
                         <SummaryCard 
-                            title={t('summary.pending_supplier_payments')}
+                            title={'Pending Supplier Payments'}
                             count={supplierDues.length}
                             icon={<DollarSign size={22} />}
                             color="bg-blue-500/20 text-blue-700 dark:text-blue-300"
-                            actionText={t('summary.view_all')}
+                            actionText={'View All'}
                             onActionClick={() => navigate('/purchases')}
                         />
                          <SummaryCard 
-                            title={t('summary.pending_deliveries')}
+                            title={'Pending Deliveries'}
                             count={pendingDeliveries.length}
                             icon={<Truck size={22} />}
                             color="bg-green-500/20 text-green-700 dark:text-green-300"
-                            actionText={t('summary.view_all')}
+                            actionText={'View All'}
                             onActionClick={() => navigate('/sales')}
                         />
                     </>

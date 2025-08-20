@@ -1,14 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Menu, Settings, LogOut, User as UserIcon, Search, X, Package, ShoppingCart } from 'lucide-react';
-import { useTranslation } from '../hooks/useTranslation';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/db';
 import { Product, Customer, Sale } from '../types';
 
 const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
-    const { t } = useTranslation();
     const { user, logout, companyName } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -56,7 +54,7 @@ const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
                 <button onClick={toggleSidebar} className="p-2 rounded-full lg:hidden hover:bg-black/10 dark:hover:bg-white/10">
                     <Menu size={24} />
                 </button>
-                <h1 className="text-xl font-bold tracking-wider text-light-text dark:text-dark-text">{companyName || t('app.name')}</h1>
+                <h1 className="text-xl font-bold tracking-wider text-light-text dark:text-dark-text">{companyName || 'Stickflow'}</h1>
             </div>
             <div className="flex items-center gap-2 md:gap-4">
                 <button onClick={() => setIsSearchOpen(true)} className="p-3 rounded-full hover:bg-black/10 dark:hover:bg-white/10">
@@ -85,7 +83,7 @@ const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-md hover:bg-red-500/10 text-red-700 dark:text-red-300"
                             >
                                 <LogOut size={20} />
-                                {t('nav.logout')}
+                                Logout
                             </button>
                         </div>
                     )}
@@ -104,7 +102,7 @@ const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
                             type="text"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            placeholder={t('search.placeholder')}
+                            placeholder="Search anything..."
                             className="w-full h-full bg-transparent focus:outline-none text-base pl-4 flex-1"
                             autoFocus
                         />
@@ -112,15 +110,15 @@ const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
                     </div>
                      {searchTerm && (
                         <div className="bg-light-surface dark:bg-dark-surface rounded-b-2xl shadow-lg border-x border-b border-light-outline/50 dark:border-dark-outline/50 max-h-[60vh] overflow-y-auto p-2">
-                           {!hasResults && <div className="p-8 text-center text-light-text-secondary dark:text-dark-text-secondary">{t('no.results.found')}</div>}
+                           {!hasResults && <div className="p-8 text-center text-light-text-secondary dark:text-dark-text-secondary">No results found</div>}
                            {results.products.length > 0 && (
-                                <div className="p-2"><h3 className="px-3 text-xs font-semibold uppercase text-light-text-secondary dark:text-dark-text-secondary mb-2">{t('search.products')}</h3><ul>{results.products.map(p => <li key={p.id} className="p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-3"><Package size={18}/>{p.name}</li>)}</ul></div>
+                                <div className="p-2"><h3 className="px-3 text-xs font-semibold uppercase text-light-text-secondary dark:text-dark-text-secondary mb-2">Products</h3><ul>{results.products.map(p => <li key={p.id} className="p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-3"><Package size={18}/>{p.name}</li>)}</ul></div>
                            )}
                            {results.customers.length > 0 && (
-                                <div className="p-2"><h3 className="px-3 text-xs font-semibold uppercase text-light-text-secondary dark:text-dark-text-secondary mb-2">{t('search.customers')}</h3><ul>{results.customers.map(c => <li key={c.id} className="p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-3"><UserIcon size={18}/>{c.name}</li>)}</ul></div>
+                                <div className="p-2"><h3 className="px-3 text-xs font-semibold uppercase text-light-text-secondary dark:text-dark-text-secondary mb-2">Customers</h3><ul>{results.customers.map(c => <li key={c.id} className="p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-3"><UserIcon size={18}/>{c.name}</li>)}</ul></div>
                            )}
                             {results.sales.length > 0 && (
-                                <div className="p-2"><h3 className="px-3 text-xs font-semibold uppercase text-light-text-secondary dark:text-dark-text-secondary mb-2">{t('search.sales')}</h3><ul>{results.sales.map(s => <li key={s.id} className="p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-3"><ShoppingCart size={18}/>{s.invoiceNumber}</li>)}</ul></div>
+                                <div className="p-2"><h3 className="px-3 text-xs font-semibold uppercase text-light-text-secondary dark:text-dark-text-secondary mb-2">Sales</h3><ul>{results.sales.map(s => <li key={s.id} className="p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-3"><ShoppingCart size={18}/>{s.invoiceNumber}</li>)}</ul></div>
                            )}
                         </div>
                      )}

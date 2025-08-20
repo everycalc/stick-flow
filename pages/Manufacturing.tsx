@@ -3,7 +3,6 @@ import { db } from '../services/db';
 import { Factory, PlusCircle, Download, FileText, CheckCircle } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { useTranslation } from '../hooks/useTranslation';
 import { ProductionRun, Product, Recipe, Attachment, Supplier, StockMovementType, StockMovement } from '../types';
 import AttachmentManager from '../components/AttachmentManager';
 
@@ -13,7 +12,6 @@ const CompleteRunModal: React.FC<{
     onClose: () => void;
     onComplete: (runId: string, producedQty: number) => void;
 }> = ({ run, productUnit, onClose, onComplete }) => {
-    const { t } = useTranslation();
     const [producedQuantity, setProducedQuantity] = useState(run.plannedQuantity);
 
     const handleSubmit = () => {
@@ -23,9 +21,9 @@ const CompleteRunModal: React.FC<{
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
             <div className="bg-light-surface dark:bg-dark-surface rounded-2xl shadow-lg p-6 w-full max-w-md">
-                <h3 className="text-lg font-semibold mb-4">{t('manufacturing.complete_run')}</h3>
+                <h3 className="text-lg font-semibold mb-4">Complete Run</h3>
                 <div>
-                    <label className="block text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">{t('manufacturing.produced_quantity')}</label>
+                    <label className="block text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Produced Quantity</label>
                     <input
                         type="number"
                         value={producedQuantity}
@@ -35,8 +33,8 @@ const CompleteRunModal: React.FC<{
                     <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-1">Planned: {run.plannedQuantity} {productUnit}</p>
                 </div>
                 <div className="mt-8 flex justify-end space-x-3">
-                    <button onClick={onClose} className="px-5 py-2 text-sm font-semibold rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('cancel')}</button>
-                    <button onClick={handleSubmit} className="bg-light-primary text-white dark:bg-dark-primary dark:text-black px-5 py-2 text-sm font-semibold rounded-full">{t('confirm')}</button>
+                    <button onClick={onClose} className="px-5 py-2 text-sm font-semibold rounded-full hover:bg-black/10 dark:hover:bg-white/10">Cancel</button>
+                    <button onClick={handleSubmit} className="bg-light-primary text-white dark:bg-dark-primary dark:text-black px-5 py-2 text-sm font-semibold rounded-full">Confirm</button>
                 </div>
             </div>
         </div>
@@ -44,7 +42,6 @@ const CompleteRunModal: React.FC<{
 };
 
 const ProductionRunDetailsModal: React.FC<{ run: ProductionRun, onClose: () => void }> = ({ run, onClose }) => {
-    const { t } = useTranslation();
     const products = db.getProducts();
     const product = products.find(p => p.id === run.productId);
     const productName = product?.name || 'Unknown';
@@ -53,7 +50,7 @@ const ProductionRunDetailsModal: React.FC<{ run: ProductionRun, onClose: () => v
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
             <div className="bg-light-surface dark:bg-dark-surface rounded-2xl shadow-lg p-6 w-full max-w-xl">
-                <h3 className="text-lg font-semibold mb-4">{t('manufacturing.run_details')}</h3>
+                <h3 className="text-lg font-semibold mb-4">Production Run Details</h3>
                 <div className="space-y-2 text-sm">
                     <div className="flex justify-between"><span className="font-medium text-light-text-secondary dark:text-dark-text-secondary">Run Name:</span> <span>{run.name}</span></div>
                     <div className="flex justify-between"><span className="font-medium text-light-text-secondary dark:text-dark-text-secondary">Product:</span> <span>{productName}</span></div>
@@ -64,7 +61,7 @@ const ProductionRunDetailsModal: React.FC<{ run: ProductionRun, onClose: () => v
                     {run.completedAt && <div className="flex justify-between"><span className="font-medium text-light-text-secondary dark:text-dark-text-secondary">Completed Date:</span> <span>{new Date(run.completedAt).toLocaleString()}</span></div>}
                 </div>
                 <div className="mt-6 flex justify-end">
-                    <button onClick={onClose} className="bg-light-primary text-white dark:bg-dark-primary dark:text-black px-5 py-2 text-sm font-semibold rounded-full">{t('close')}</button>
+                    <button onClick={onClose} className="bg-light-primary text-white dark:bg-dark-primary dark:text-black px-5 py-2 text-sm font-semibold rounded-full">Close</button>
                 </div>
             </div>
         </div>
@@ -73,7 +70,6 @@ const ProductionRunDetailsModal: React.FC<{ run: ProductionRun, onClose: () => v
 
 
 const Manufacturing: React.FC = () => {
-    const { t } = useTranslation();
     const [productionRuns, setProductionRuns] = useState(db.getProductionRuns());
     const [products, setProducts] = useState(db.getProducts());
     const recipes = db.getRecipes();
@@ -244,7 +240,7 @@ const Manufacturing: React.FC = () => {
         <>
             <div className="bg-light-surface dark:bg-dark-surface p-4 sm:p-6 rounded-2xl shadow-md">
                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold">{t('nav.manufacturing')}</h2>
+                    <h2 className="text-xl font-semibold">Manufacturing</h2>
                     <button onClick={() => setIsPlanModalOpen(true)} className="flex items-center bg-light-primary text-white dark:bg-dark-primary dark:text-black px-4 py-2 rounded-full text-sm font-semibold shadow-sm hover:opacity-90 transition">
                         <PlusCircle size={20} className="mr-2"/> Plan Production Run
                     </button>
@@ -256,8 +252,8 @@ const Manufacturing: React.FC = () => {
                            <thead>
                                 <tr className="border-b border-light-outline/50 dark:border-dark-outline/50">
                                     <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Run Name</th>
-                                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">{t('manufacturing.planned_date')}</th>
-                                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">{t('manufacturing.completed_date')}</th>
+                                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Planned Date</th>
+                                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Completed Date</th>
                                     <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Status</th>
                                     <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -271,7 +267,7 @@ const Manufacturing: React.FC = () => {
                                         <td className="p-3 whitespace-nowrap">{getStatusChip(run.status)}</td>
                                         <td className="p-3 whitespace-nowrap space-x-2">
                                             {run.status === 'planned' && (
-                                                <button onClick={() => { setActiveRun(run); setIsCompleteModalOpen(true); }} title={t('manufacturing.complete_run')} className="p-2 rounded-full text-green-600 dark:text-green-400 hover:bg-green-500/10"><CheckCircle size={20}/></button>
+                                                <button onClick={() => { setActiveRun(run); setIsCompleteModalOpen(true); }} title="Complete Run" className="p-2 rounded-full text-green-600 dark:text-green-400 hover:bg-green-500/10"><CheckCircle size={20}/></button>
                                             )}
                                             <button onClick={() => { setActiveRun(run); setIsDetailsModalOpen(true); }} title={'View Details'} className="p-2 rounded-full text-light-text-secondary dark:text-dark-text-secondary hover:bg-black/10 dark:hover:bg-white/10"><FileText size={20}/></button>
                                         </td>
@@ -291,7 +287,7 @@ const Manufacturing: React.FC = () => {
             {isPlanModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
                     <div className="bg-light-surface dark:bg-dark-surface rounded-2xl shadow-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-lg font-semibold mb-6">{t('manufacturing.plan_run_title')}</h3>
+                        <h3 className="text-lg font-semibold mb-6">Plan New Production Run</h3>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -309,16 +305,16 @@ const Manufacturing: React.FC = () => {
 
                         {selectedProduct && !selectedRecipe && (
                             <div className="mt-6 text-center p-4 bg-yellow-500/10 text-yellow-700 dark:text-yellow-200 rounded-lg">
-                                {t('manufacturing.no_recipe')}
+                                No recipe found for this product.
                             </div>
                         )}
 
                         {selectedProduct && selectedRecipe && (
                             <div className="mt-6">
                                 <div className="flex justify-between items-center mb-2">
-                                    <h4 className="font-semibold text-base">{t('manufacturing.raw_material_availability')}</h4>
+                                    <h4 className="font-semibold text-base">Raw Material Availability</h4>
                                     <button onClick={() => handleDownloadRequirementsPdf(materialRequirements, `Plan_for_${selectedProduct.name}`)} className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border border-light-outline dark:border-dark-outline hover:bg-black/5 dark:hover:bg-white/10">
-                                        <Download size={14} /> {t('manufacturing.download_reqs')}
+                                        <Download size={14} /> Download Requirements
                                     </button>
                                 </div>
                                 <div className="overflow-x-auto border border-light-outline/50 dark:border-dark-outline/50 rounded-lg">
@@ -326,9 +322,9 @@ const Manufacturing: React.FC = () => {
                                         <thead className="bg-black/5 dark:bg-white/5">
                                             <tr>
                                                 <th className="p-2 text-left font-semibold">Material</th>
-                                                <th className="p-2 text-left font-semibold">{t('manufacturing.required')}</th>
-                                                <th className="p-2 text-left font-semibold">{t('manufacturing.available')}</th>
-                                                <th className="p-2 text-left font-semibold">{t('manufacturing.shortage')}</th>
+                                                <th className="p-2 text-left font-semibold">Required</th>
+                                                <th className="p-2 text-left font-semibold">Available</th>
+                                                <th className="p-2 text-left font-semibold">Shortage</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-light-outline/50 dark:divide-dark-outline/50">
@@ -347,12 +343,12 @@ const Manufacturing: React.FC = () => {
                         )}
                         
                         <div className="mt-6">
-                             <h4 className="font-semibold text-base">{t('sales.attachments')}</h4>
+                             <h4 className="font-semibold text-base">Attachments</h4>
                              <AttachmentManager attachments={attachments} setAttachments={setAttachments} />
                         </div>
 
                         <div className="mt-8 flex justify-end space-x-3">
-                            <button onClick={() => setIsPlanModalOpen(false)} className="px-5 py-2 text-sm font-semibold rounded-full text-light-text dark:text-dark-text hover:bg-black/10 dark:hover:bg-white/10 transition">{t('cancel')}</button>
+                            <button onClick={() => setIsPlanModalOpen(false)} className="px-5 py-2 text-sm font-semibold rounded-full text-light-text dark:text-dark-text hover:bg-black/10 dark:hover:bg-white/10 transition">Cancel</button>
                             <button onClick={handleCreateRun} className="bg-light-primary text-white dark:bg-dark-primary dark:text-black px-5 py-2 text-sm font-semibold rounded-full shadow-sm hover:opacity-90 transition">Create Production Run</button>
                         </div>
                     </div>

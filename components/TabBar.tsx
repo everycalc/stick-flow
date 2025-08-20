@@ -1,21 +1,19 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useTranslation } from '../hooks/useTranslation';
 import { useAuth } from '../contexts/AuthContext';
 import { Permission } from '../types';
 import { LayoutDashboard, Calculator, ShoppingCart, Package, BarChart2 } from 'lucide-react';
 
 const TabBar: React.FC = () => {
-    const { t } = useTranslation();
     const { hasPermission } = useAuth();
     const location = useLocation();
 
     const tabs = [
-        { to: '/', label: t('nav.summary'), icon: LayoutDashboard, permission: Permission.VIEW_SUMMARY },
-        { to: '/calculator', label: t('nav.calculator'), icon: Calculator, permission: Permission.VIEW_CALCULATOR },
-        { to: '/sales', label: t('nav.sales'), icon: ShoppingCart, permission: Permission.VIEW_SALES },
-        { to: '/inventory', label: t('nav.inventory'), icon: Package, permission: Permission.VIEW_INVENTORY },
-        { to: '/reports', label: t('nav.reports'), icon: BarChart2, permission: Permission.VIEW_REPORTS },
+        { to: '/', label: 'Summary', icon: LayoutDashboard, permission: Permission.VIEW_SUMMARY },
+        { to: '/calculator', label: 'Calculator', icon: Calculator, permission: Permission.VIEW_CALCULATOR },
+        { to: '/sales', label: 'Sales', icon: ShoppingCart, permission: Permission.VIEW_SALES },
+        { to: '/inventory', label: 'Inventory', icon: Package, permission: Permission.VIEW_INVENTORY },
+        { to: '/reports', label: 'Reports', icon: BarChart2, permission: Permission.VIEW_REPORTS },
     ];
     
     const visibleTabs = tabs.filter(tab => hasPermission(tab.permission));

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../hooks/useTranslation';
 import { ShieldAlert } from 'lucide-react';
 
 interface PinConfirmModalProps {
@@ -12,7 +11,6 @@ interface PinConfirmModalProps {
 
 const PinConfirmModal: React.FC<PinConfirmModalProps> = ({ onClose, onConfirm, title, description }) => {
     const { adminPin } = useAuth();
-    const { t } = useTranslation();
     const [pin, setPin] = useState('');
     const [error, setError] = useState('');
 
@@ -50,14 +48,14 @@ const PinConfirmModal: React.FC<PinConfirmModalProps> = ({ onClose, onConfirm, t
 
                 <div className="flex justify-center gap-4 mt-8">
                     <button onClick={onClose} className="px-5 py-2 text-sm font-semibold rounded-full text-light-text dark:text-dark-text hover:bg-black/10 dark:hover:bg-white/10 transition">
-                        {t('cancel')}
+                        Cancel
                     </button>
                     <button 
                         onClick={handleConfirm}
                         disabled={pin.length !== 4}
                         className="bg-red-600 text-white px-5 py-2 text-sm font-semibold rounded-full shadow-sm hover:bg-red-700 transition disabled:opacity-50"
                     >
-                        {t('confirm')}
+                        Confirm
                     </button>
                 </div>
             </div>

@@ -57,7 +57,7 @@ const PurchaseOrderEditorModal: React.FC<{
         if (!supplierId || items.length === 0) return alert("Please select a supplier and add at least one item.");
 
         onSave({
-            id: order?.id || `po_${Date.now()}`,
+            id: order?.id || db.getNextPurchaseOrderNumber(),
             supplierId,
             items,
             expectedDeliveryDate,

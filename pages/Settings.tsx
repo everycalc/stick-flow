@@ -1,17 +1,13 @@
-import React, { useContext, useRef, useState } from 'react';
-import { LanguageContext } from '../contexts/LanguageContext';
-import { Language, Permission, UserRole } from '../types';
-import { useTranslation } from '../hooks/useTranslation';
+import React, { useRef, useState } from 'react';
+import { Permission, UserRole } from '../types';
 import { db } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 import PinConfirmModal from '../components/PinConfirmModal';
 import { useNavigate } from 'react-router-dom';
-import { Users2, DollarSign } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 
 const Settings: React.FC = () => {
-    const { language, setLanguage } = useContext(LanguageContext);
     const { user, changePin, hasPermission } = useAuth();
-    const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
 
@@ -19,6 +15,7 @@ const Settings: React.FC = () => {
     const [newPin, setNewPin] = useState('');
     const [confirmPin, setConfirmPin] = useState('');
     const [pinMessage, setPinMessage] = useState({ text: '', success: false });
+    const [restoreMessage, setRestoreMessage] = useState<{ text: string, success: boolean } | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     const products = db.getProducts();
@@ -45,16 +42,19 @@ const Settings: React.FC = () => {
                         if (typeof text === 'string') {
                             const data = JSON.parse(text);
                             db.restoreAllData(data);
-                            alert("Data restored successfully! The app will now reload.");
-                            window.location.reload();
+                            setRestoreMessage({ text: "Data restored successfully! The app will reload in 3 seconds.", success: true });
+                            setTimeout(() => window.location.reload(), 3000);
                         }
                     } catch (error) {
                         console.error("Failed to parse backup file:", error);
-                        alert("Error: Invalid backup file.");
+                        setRestoreMessage({ text: "Error: Invalid backup file.", success: false });
                     }
                 };
                 reader.readAsText(file);
             }
+        }
+        if (event.target) {
+            event.target.value = '';
         }
     };
     
@@ -72,7 +72,7 @@ const Settings: React.FC = () => {
         }
         const success = changePin(currentPin, newPin);
         if(success) {
-            setPinMessage({ text: t('settings.pin_changed'), success: true });
+            setPinMessage({ text: 'PIN changed successfully!', success: true });
             setCurrentPin('');
             setNewPin('');
             setConfirmPin('');
@@ -96,40 +96,25 @@ const Settings: React.FC = () => {
     return (
         <>
             <div className="space-y-6">
-                <div className="bg-light-surface dark:bg-dark-surface p-6 rounded-2xl shadow-md">
-                    <h2 className="text-xl font-semibold mb-4">{t('settings.language')}</h2>
-                    <div className="flex space-x-2">
-                        {(Object.values(Language) as Language[]).map(lang => (
-                            <button
-                                key={lang}
-                                onClick={() => setLanguage(lang)}
-                                className={`${language === lang ? 'bg-light-primary-container text-light-secondary dark:bg-dark-primary-container dark:text-dark-primary font-semibold' : 'hover:bg-black/5 dark:hover:bg-white/5 text-light-text-secondary dark:text-dark-text-secondary'} px-5 py-2 text-sm rounded-full transition`}
-                            >
-                                {lang.toUpperCase()}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
                 {hasPermission(Permission.MANAGE_STAFF) && (
                      <div className="bg-light-surface dark:bg-dark-surface p-6 rounded-2xl shadow-md">
-                        <h2 className="text-xl font-semibold mb-4">{t('staff.title')}</h2>
-                        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary my-2">Create roles with specific permissions and manage your staff members.</p>
+                        <h2 className="text-xl font-semibold mb-4">Team Management</h2>
+                        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary my-2">Create roles with specific permissions and manage your team members.</p>
                         <button onClick={() => navigate('/staff')} className={btnSecondary}>
-                           {t('settings.manage_staff')}
+                           Manage Team
                         </button>
                     </div>
                 )}
                 
                 {user?.role === UserRole.Admin && (
                     <div className="bg-light-surface dark:bg-dark-surface p-6 rounded-2xl shadow-md">
-                        <h2 className="text-xl font-semibold mb-4">{t('settings.stock_valuation')}</h2>
+                        <h2 className="text-xl font-semibold mb-4">Current Stock Valuation</h2>
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-green-500/20 rounded-full">
                                 <DollarSign size={24} className="text-green-700 dark:text-green-300"/>
                             </div>
                             <div>
-                                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">{t('settings.total_value')}</p>
+                                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">Total Value</p>
                                 <p className="text-2xl font-bold">₹{totalStockValue.toFixed(2)}</p>
                             </div>
                         </div>
@@ -137,43 +122,43 @@ const Settings: React.FC = () => {
                 )}
 
                 <div className="bg-light-surface dark:bg-dark-surface p-6 rounded-2xl shadow-md">
-                    <h2 className="text-xl font-semibold mb-4">{t('settings.security')}</h2>
+                    <h2 className="text-xl font-semibold mb-4">Security</h2>
                     <form onSubmit={handlePinChange} className="max-w-sm space-y-4">
-                        <h3 className="font-semibold">{t('settings.change_pin')}</h3>
+                        <h3 className="font-semibold">Change Admin PIN</h3>
                         <div>
-                            <label className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1 block">{t('settings.current_pin')}</label>
+                            <label className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1 block">Current PIN</label>
                             <input type="password" value={currentPin} onChange={e => setCurrentPin(e.target.value)} maxLength={4} className={inputClass} />
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1 block">{t('settings.new_pin')}</label>
+                            <label className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1 block">New PIN</label>
                             <input type="password" value={newPin} onChange={e => setNewPin(e.target.value)} maxLength={4} className={inputClass} />
                         </div>
                          <div>
-                            <label className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1 block">{t('settings.confirm_pin')}</label>
+                            <label className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1 block">Confirm New PIN</label>
                             <input type="password" value={confirmPin} onChange={e => setConfirmPin(e.target.value)} maxLength={4} className={inputClass} />
                         </div>
                         <button type="submit" className={btnPrimary}>
-                            {t('settings.update_pin')}
+                            Update PIN
                         </button>
                         {pinMessage.text && <p className={`text-sm mt-2 ${pinMessage.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{pinMessage.text}</p>}
                     </form>
                 </div>
 
                 <div className="bg-light-surface dark:bg-dark-surface p-6 rounded-2xl shadow-md">
-                    <h2 className="text-xl font-semibold mb-4">{t('settings.data_management')}</h2>
+                    <h2 className="text-xl font-semibold mb-4">Data Management</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <h3 className="font-semibold">{t('settings.backup_data')}</h3>
-                            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary my-2">{t('settings.backup_desc')}</p>
+                            <h3 className="font-semibold">Backup Data</h3>
+                            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary my-2">Export all application data to a single file.</p>
                             <button onClick={handleBackup} className={btnSecondary}>
-                                {t('settings.backup_data')}
+                                Backup Data
                             </button>
                         </div>
                          <div>
-                            <h3 className="font-semibold">{t('settings.restore_data')}</h3>
-                            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary my-2">{t('settings.restore_desc')}</p>
+                            <h3 className="font-semibold">Restore Data</h3>
+                            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary my-2">Import data from a backup file. This will overwrite current data.</p>
                             <button onClick={triggerFileSelect} className={btnSecondary}>
-                                 {t('settings.restore_data')}
+                                 Restore Data
                             </button>
                              <input
                                 type="file"
@@ -182,15 +167,16 @@ const Settings: React.FC = () => {
                                 className="hidden"
                                 accept=".json"
                             />
+                            {restoreMessage && <p className={`text-sm mt-2 ${restoreMessage.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{restoreMessage.text}</p>}
                         </div>
                     </div>
                 </div>
                 
                 <div className="border-red-500/50 border-2 bg-red-500/10 p-6 rounded-2xl shadow-md">
-                    <h2 className="text-xl font-semibold mb-2 text-red-700 dark:text-red-300">{t('settings.danger_zone')}</h2>
-                    <p className="text-sm text-red-800 dark:text-red-200 mb-4">{t('settings.delete_data_desc')}</p>
+                    <h2 className="text-xl font-semibold mb-2 text-red-700 dark:text-red-300">Danger Zone</h2>
+                    <p className="text-sm text-red-800 dark:text-red-200 mb-4">Permanently delete all data. This action cannot be undone.</p>
                     <button onClick={() => setIsDeleteModalOpen(true)} className={btnDanger}>
-                        {t('settings.delete_data')}
+                        Delete All Data
                     </button>
                 </div>
             </div>
@@ -198,8 +184,8 @@ const Settings: React.FC = () => {
                 <PinConfirmModal 
                     onClose={() => setIsDeleteModalOpen(false)}
                     onConfirm={handleDeleteData}
-                    title={t('settings.delete_confirmation_title')}
-                    description={t('settings.delete_confirmation_text')}
+                    title="Are you absolutely sure?"
+                    description="This will permanently delete all your data. To confirm, please enter your admin PIN."
                 />
             )}
         </>

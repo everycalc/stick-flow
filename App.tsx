@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import AlertBar from './components/AlertBar';
@@ -11,7 +10,6 @@ import Sales from './pages/Sales';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
-import Attendance from './pages/Attendance';
 import { UserRole, Permission } from './types';
 import Distributors from './pages/Distributors';
 import InitialSetup from './components/InitialSetup';
@@ -21,20 +19,19 @@ import StockLedger from './pages/StockLedger';
 import Sidebar from './components/Sidebar';
 import CalculatorPage from './pages/CalculatorPage';
 import TabBar from './components/TabBar';
-import Staff from './pages/Staff';
+import Team from './pages/Staff';
 import Suppliers from './pages/Suppliers';
 import Customers from './pages/Customers';
 import Bin from './pages/Bin';
+import Finance from './pages/Finance';
 
 const App: React.FC = () => {
     return (
-        <LanguageProvider>
-            <AuthProvider>
-                <HashRouter>
-                    <AppContent />
-                </HashRouter>
-            </AuthProvider>
-        </LanguageProvider>
+        <AuthProvider>
+            <HashRouter>
+                <AppContent />
+            </HashRouter>
+        </AuthProvider>
     );
 };
 
@@ -82,16 +79,16 @@ const AppContent: React.FC = () => {
                         <Route path="/inventory" element={<Inventory />} />
                         <Route path="/manufacturing" element={<Manufacturing />} />
                         <Route path="/sales" element={<Sales />} />
-                        <Route path="/attendance" element={<Attendance />} />
                         <Route path="/calculator" element={<CalculatorPage />} />
                         <Route path="/purchases" element={<PermissionProtectedRoute requiredPermission={Permission.VIEW_PURCHASES}><Purchases /></PermissionProtectedRoute>} />
                         <Route path="/suppliers" element={<PermissionProtectedRoute requiredPermission={Permission.MANAGE_SUPPLIERS}><Suppliers /></PermissionProtectedRoute>} />
                         <Route path="/customers" element={<PermissionProtectedRoute requiredPermission={Permission.MANAGE_CUSTOMERS}><Customers /></PermissionProtectedRoute>} />
                         <Route path="/stock_ledger" element={<PermissionProtectedRoute requiredPermission={Permission.VIEW_STOCK_LEDGER}><StockLedger /></PermissionProtectedRoute>} />
                         <Route path="/distributors" element={<PermissionProtectedRoute requiredPermission={Permission.VIEW_DISTRIBUTORS}><Distributors /></PermissionProtectedRoute>} />
+                        <Route path="/finance" element={<PermissionProtectedRoute requiredPermission={Permission.VIEW_FINANCE}><Finance /></PermissionProtectedRoute>} />
                         <Route path="/reports" element={<PermissionProtectedRoute requiredPermission={Permission.VIEW_REPORTS}><Reports /></PermissionProtectedRoute>} />
                         <Route path="/settings" element={<PermissionProtectedRoute requiredPermission={Permission.VIEW_SETTINGS}><Settings /></PermissionProtectedRoute>} />
-                        <Route path="/staff" element={<PermissionProtectedRoute requiredPermission={Permission.MANAGE_STAFF}><Staff /></PermissionProtectedRoute>} />
+                        <Route path="/staff" element={<PermissionProtectedRoute requiredPermission={Permission.MANAGE_STAFF}><Team /></PermissionProtectedRoute>} />
                         <Route path="/bin" element={<PermissionProtectedRoute requiredPermission={Permission.VIEW_BIN}><Bin /></PermissionProtectedRoute>} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>

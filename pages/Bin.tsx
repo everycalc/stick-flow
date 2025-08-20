@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { db } from '../services/db';
-import { useTranslation } from '../hooks/useTranslation';
 import { Product, Recipe } from '../types';
 import { Trash2, RotateCcw } from 'lucide-react';
 
 const Bin: React.FC = () => {
-    const { t } = useTranslation();
     const [products, setProducts] = useState<Product[]>(db.getProducts());
     const recipes = db.getRecipes();
 
@@ -27,7 +25,7 @@ const Bin: React.FC = () => {
     return (
         <div className="bg-light-surface dark:bg-dark-surface p-4 sm:p-6 rounded-2xl shadow-md">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">{t('bin.title')}</h2>
+                <h2 className="text-xl font-semibold">Deleted Products</h2>
             </div>
 
             <div className="overflow-x-auto">
@@ -53,7 +51,7 @@ const Bin: React.FC = () => {
                                             className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-full bg-green-500/20 text-green-700 dark:text-green-300 hover:bg-green-500/30"
                                         >
                                             <RotateCcw size={16} />
-                                            {t('bin.restore')}
+                                            Restore
                                         </button>
                                     </td>
                                 </tr>
@@ -63,7 +61,7 @@ const Bin: React.FC = () => {
                 ) : (
                     <div className="text-center py-16">
                         <Trash2 size={48} className="mx-auto text-light-text-secondary dark:text-dark-text-secondary"/>
-                        <p className="mt-4 text-light-text-secondary dark:text-dark-text-secondary">{t('bin.empty')}</p>
+                        <p className="mt-4 text-light-text-secondary dark:text-dark-text-secondary">The bin is empty.</p>
                     </div>
                 )}
             </div>

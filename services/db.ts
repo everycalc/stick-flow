@@ -1,4 +1,4 @@
-import { Product, ItemType, Supplier, Customer, Sale, ProductionRun, Alert, Recipe, PurchaseOrder, StockMovement, StockMovementType, Payment, Role, Permission, StaffMember, AttendanceRecord, DistributorSettlement } from '../types';
+import { Product, ItemType, Supplier, Customer, Sale, ProductionRun, Alert, Recipe, PurchaseOrder, StockMovement, StockMovementType, Payment, Role, Permission, StaffMember, AttendanceRecord, DistributorSettlement, Expense } from '../types';
 
 // --- MOCK DATA ---
 const initialProducts: Product[] = [];
@@ -20,6 +20,7 @@ const set = <T,>(key: string, value: T): void => {
 };
 
 let saleCounter = parseInt(localStorage.getItem('stickflow_sale_counter') || '0');
+let poCounter = parseInt(localStorage.getItem('stickflow_po_counter') || '0');
 
 export const db = {
     // --- Getters ---
@@ -36,6 +37,7 @@ export const db = {
     getStaff: (): StaffMember[] => get<StaffMember[]>('stickflow_staff', []),
     getAttendanceRecords: (): AttendanceRecord[] => get<AttendanceRecord[]>('stickflow_attendance', []),
     getDistributorSettlements: (): DistributorSettlement[] => get<DistributorSettlement[]>('stickflow_settlements', []),
+    getExpenses: (): Expense[] => get<Expense[]>('stickflow_expenses', []),
 
     // --- Setters ---
     setCompanyName: (name: string): void => set<string>('stickflow_company_name', name),
@@ -51,13 +53,22 @@ export const db = {
     setStaff: (staff: StaffMember[]): void => set<StaffMember[]>('stickflow_staff', staff),
     setAttendanceRecords: (records: AttendanceRecord[]): void => set<AttendanceRecord[]>('stickflow_attendance', records),
     setDistributorSettlements: (settlements: DistributorSettlement[]): void => set<DistributorSettlement[]>('stickflow_settlements', settlements),
+    setExpenses: (expenses: Expense[]): void => set<Expense[]>('stickflow_expenses', expenses),
 
-    // --- Invoice Number ---
+
+    // --- Invoice & PO Numbering ---
     getNextInvoiceNumber: (): string => {
         saleCounter++;
         localStorage.setItem('stickflow_sale_counter', saleCounter.toString());
         return `INV-${saleCounter.toString().padStart(3, '0')}`;
     },
+
+    getNextPurchaseOrderNumber: (): string => {
+        poCounter++;
+        localStorage.setItem('stickflow_po_counter', poCounter.toString());
+        return `PO-${poCounter.toString().padStart(3, '0')}`;
+    },
+
 
     // --- Alerts ---
     getAlerts: (): Alert[] => {
@@ -98,7 +109,9 @@ export const db = {
         staff: db.getStaff(),
         attendanceRecords: db.getAttendanceRecords(),
         settlements: db.getDistributorSettlements(),
+        expenses: db.getExpenses(),
         saleCounter: localStorage.getItem('stickflow_sale_counter') || '0',
+        poCounter: localStorage.getItem('stickflow_po_counter') || '0',
     }),
 
     restoreAllData: (data: any) => {
@@ -115,8 +128,11 @@ export const db = {
         db.setStaff(data.staff || []);
         db.setAttendanceRecords(data.attendanceRecords || []);
         db.setDistributorSettlements(data.settlements || []);
+        db.setExpenses(data.expenses || []);
         localStorage.setItem('stickflow_sale_counter', data.saleCounter || '0');
         saleCounter = parseInt(data.saleCounter || '0');
+        localStorage.setItem('stickflow_po_counter', data.poCounter || '0');
+        poCounter = parseInt(data.poCounter || '0');
     },
 
     clearAllData: () => {
@@ -133,7 +149,9 @@ export const db = {
         localStorage.removeItem('stickflow_staff');
         localStorage.removeItem('stickflow_attendance');
         localStorage.removeItem('stickflow_settlements');
+        localStorage.removeItem('stickflow_expenses');
         localStorage.removeItem('stickflow_sale_counter');
+        localStorage.removeItem('stickflow_po_counter');
         // Keep admin user and settings
         // localStorage.removeItem('stickflow_admin_user');
         // localStorage.removeItem('stickflow_initialized');

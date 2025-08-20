@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { ItemType, Product, Supplier } from '../types';
 import { db } from '../services/db';
 import { PlusCircle, Package, Trash2 } from 'lucide-react';
-import { useTranslation } from '../hooks/useTranslation';
 
 
 // ConfirmActionModal Component
@@ -13,7 +12,6 @@ const ConfirmActionModal: React.FC<{
     onConfirm: () => void;
     onClose: () => void;
 }> = ({ title, message, confirmText, onConfirm, onClose }) => {
-    const { t } = useTranslation();
     const [inputText, setInputText] = useState('');
     const isConfirmed = inputText === confirmText;
 
@@ -26,17 +24,17 @@ const ConfirmActionModal: React.FC<{
                     type="text"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
-                    placeholder={t('inventory.delete.type_to_confirm')}
+                    placeholder={'type "delete" to confirm'}
                     className="w-full p-2 rounded-lg border border-light-outline dark:border-dark-outline bg-transparent focus:ring-1 focus:ring-red-500 focus:outline-none"
                 />
                 <div className="flex justify-end gap-3 mt-6">
-                    <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('cancel')}</button>
+                    <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">Cancel</button>
                     <button
                         onClick={onConfirm}
                         disabled={!isConfirmed}
                         className="px-4 py-2 rounded-full bg-red-600 text-white disabled:bg-red-600/50 disabled:cursor-not-allowed"
                     >
-                        {t('delete')}
+                        Delete
                     </button>
                 </div>
             </div>
@@ -52,7 +50,6 @@ const ProductEditorModal: React.FC<{
     onDelete: (productId: string) => void;
     onClose: () => void;
 }> = ({ product, onSave, onDelete, onClose }) => {
-    const { t } = useTranslation();
     const suppliers = db.getSuppliers();
     const [formData, setFormData] = useState<Omit<Product, 'id'>>({
         name: product?.name || '',
@@ -127,7 +124,7 @@ const ProductEditorModal: React.FC<{
                     
                     {formData.type === ItemType.RawMaterial && (
                         <div>
-                            <label className="block text-sm font-medium mb-1">{t('inventory.suppliers')}</label>
+                            <label className="block text-sm font-medium mb-1">Suppliers</label>
                             <div className="max-h-32 overflow-y-auto p-2 border rounded-lg border-light-outline dark:border-dark-outline bg-transparent space-y-1">
                                 {suppliers.length > 0 ? suppliers.map(supplier => (
                                     <label key={supplier.id} className="flex items-center gap-2 p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
@@ -160,12 +157,12 @@ const ProductEditorModal: React.FC<{
                     <div>
                         {product && (
                              <button type="button" onClick={() => onDelete(product.id)} className="flex items-center gap-2 px-4 py-2 rounded-full text-red-600 dark:text-red-400 hover:bg-red-500/10 text-sm font-semibold">
-                                <Trash2 size={16} /> {t('delete')}
+                                <Trash2 size={16} /> Delete
                             </button>
                         )}
                     </div>
                     <div className="flex gap-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('cancel')}</button>
+                        <button type="button" onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">Cancel</button>
                         <button type="submit" className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black">Save Product</button>
                     </div>
                 </div>
@@ -175,7 +172,6 @@ const ProductEditorModal: React.FC<{
 };
 
 const Inventory: React.FC = () => {
-    const { t } = useTranslation();
     const [products, setProducts] = useState(db.getProducts());
     const [activeTab, setActiveTab] = useState<ItemType>(ItemType.RawMaterial);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -307,8 +303,8 @@ const Inventory: React.FC = () => {
         )}
         {isDeleteModalOpen && (
             <ConfirmActionModal
-                title={t('inventory.delete.title')}
-                message={t('inventory.delete.confirm_text')}
+                title="Delete Product?"
+                message={'This action will move the product to the bin. To confirm, type "delete" below.'}
                 confirmText="delete"
                 onConfirm={handleConfirmDelete}
                 onClose={() => setIsDeleteModalOpen(false)}

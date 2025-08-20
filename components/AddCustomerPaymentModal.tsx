@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from '../hooks/useTranslation';
 import { Customer } from '../types';
 import { X } from 'lucide-react';
 
@@ -10,7 +9,6 @@ interface AddCustomerPaymentModalProps {
 }
 
 const AddCustomerPaymentModal: React.FC<AddCustomerPaymentModalProps> = ({ customer, onSave, onClose }) => {
-    const { t } = useTranslation();
     const [amount, setAmount] = useState<number>(0);
     const [mode, setMode] = useState<'cash' | 'online' | 'cheque'>('cash');
 
@@ -26,12 +24,12 @@ const AddCustomerPaymentModal: React.FC<AddCustomerPaymentModalProps> = ({ custo
         <div className="fixed inset-0 bg-black/75 flex justify-center items-center z-50 p-4">
             <div className="bg-light-surface dark:bg-dark-surface rounded-2xl p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">{t('customers.payment_for')} {customer.name}</h3>
+                    <h3 className="text-lg font-semibold">Payment for {customer.name}</h3>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"><X size={20}/></button>
                 </div>
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium mb-1">{t('sales.amount_paid')}</label>
+                        <label className="block text-sm font-medium mb-1">Amount Paid</label>
                         <input
                             type="number"
                             value={amount || ''}
@@ -42,7 +40,7 @@ const AddCustomerPaymentModal: React.FC<AddCustomerPaymentModalProps> = ({ custo
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1">{t('sales.payment_mode')}</label>
+                        <label className="block text-sm font-medium mb-1">Payment Mode</label>
                         <select value={mode} onChange={(e) => setMode(e.target.value as any)} className={inputClass}>
                             <option value="cash">Cash</option>
                             <option value="online">Online</option>
@@ -51,8 +49,8 @@ const AddCustomerPaymentModal: React.FC<AddCustomerPaymentModalProps> = ({ custo
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-light-outline/50 dark:border-dark-outline/50">
-                    <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('cancel')}</button>
-                    <button onClick={handleSave} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black">{t('save')}</button>
+                    <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">Cancel</button>
+                    <button onClick={handleSave} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black">Save</button>
                 </div>
             </div>
         </div>

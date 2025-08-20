@@ -1,11 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { db } from '../services/db';
 import { StockMovement, StockMovementType, Product } from '../types';
-import { useTranslation } from '../hooks/useTranslation';
 import { ArrowDownLeft, ArrowUpRight, Factory, Trash2, Package } from 'lucide-react';
 
 const StockLedger: React.FC = () => {
-    const { t } = useTranslation();
     const allMovements = db.getStockMovements();
     const products = db.getProducts();
 
@@ -66,7 +64,7 @@ const StockLedger: React.FC = () => {
     return (
         <div className="bg-light-surface dark:bg-dark-surface p-4 sm:p-6 rounded-2xl shadow-md">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">{t('stock_ledger.title')}</h2>
+                <h2 className="text-xl font-semibold">Stock Ledger</h2>
                 <div className="w-full max-w-xs">
                      <select 
                         value={selectedProductId} 
@@ -83,12 +81,12 @@ const StockLedger: React.FC = () => {
                     <table className="min-w-full">
                          <thead>
                             <tr className="border-b border-light-outline/50 dark:border-dark-outline/50">
-                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">{t('stock_ledger.product')}</th>
-                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">{t('stock_ledger.date')}</th>
-                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">{t('stock_ledger.type')}</th>
-                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">{t('stock_ledger.quantity')}</th>
-                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">{t('stock_ledger.balance')}</th>
-                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">{t('stock_ledger.reference')}</th>
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Product</th>
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Date</th>
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Type</th>
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Quantity Change</th>
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Balance</th>
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Reference</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-light-outline/50 dark:divide-dark-outline/50">

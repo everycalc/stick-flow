@@ -10,7 +10,7 @@ const Distributors: React.FC = () => {
     const [sales, setSales] = useState(db.getSales());
     const [settlements, setSettlements] = useState(db.getDistributorSettlements());
     const [customers, setCustomers] = useState(db.getCustomers());
-    const distributors = useMemo(() => customers.filter(c => c.isDistributor), [customers]);
+    const distributors = useMemo(() => customers.filter(c => c.isDistributor && !c.isDeleted), [customers]);
     
     const [selectedDistributorId, setSelectedDistributorId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('sales');
@@ -82,7 +82,7 @@ const Distributors: React.FC = () => {
                     )) : (
                         <div className="text-center py-16 bg-light-surface dark:bg-dark-surface rounded-2xl">
                             <User size={48} className="mx-auto text-light-text-secondary dark:text-dark-text-secondary"/>
-                            <p className="mt-4 text-light-text-secondary dark:text-dark-text-secondary">No distributors found.</p>
+                            <p className="mt-4 text-sm text-light-text-secondary dark:text-dark-text-secondary">No distributors found.</p>
                         </div>
                     )}
                 </div>
@@ -158,131 +158,137 @@ const DistributorSalesTab: React.FC<{ distributor: Customer, sales: Sale[], cust
                         </tbody>
                     </table>
                 </div>
-            ) : (
-                <div className="text-center py-10">
-                    <ShoppingCart size={40} className="mx-auto text-light-text-secondary dark:text-dark-text-secondary"/>
-                    <p className="mt-4 text-sm text-light-text-secondary dark:text-dark-text-secondary">No sales recorded for this distributor.</p>
-                </div>
-            )}
+            ) : <p>No sales records found for this distributor.</p>}
         </div>
-    )
-}
+    );
+};
 
-const DistributorSettlementsTab: React.FC<{ distributor: Customer, sales: Sale[], settlements: DistributorSettlement[], onNewSettlement: () => void }> = ({ distributor, settlements, onNewSettlement }) => {
+const DistributorSettlementsTab: React.FC<{ distributor: Customer, sales: Sale[], settlements: DistributorSettlement[], onNewSettlement: () => void }> = ({ distributor, sales, settlements, onNewSettlement }) => {
     const distributorSettlements = settlements.filter(s => s.distributorId === distributor.id);
     return (
         <div>
-             <div className="flex justify-end mb-4">
+            <div className="flex justify-end mb-4">
                 <button onClick={onNewSettlement} className="flex items-center bg-light-primary text-white dark:bg-dark-primary dark:text-black px-4 py-2 rounded-full text-sm font-semibold shadow-sm hover:opacity-90 transition">
-                    <PlusCircle size={20} className="mr-2"/> Create New Settlement
+                    <PlusCircle size={20} className="mr-2"/> New Settlement
                 </button>
             </div>
-            {distributorSettlements.length > 0 ? (
-                <div className="space-y-4">
-                    {distributorSettlements.map(settlement => (
-                        <div key={settlement.id} className="p-4 bg-black/5 dark:bg-white/5 rounded-lg">
-                            <p className="font-semibold">Settlement ID: {settlement.id}</p>
-                            <p className="text-sm">Period: {settlement.periodStartDate} to {settlement.periodEndDate}</p>
-                            <p className="text-sm">Settled On: {new Date(settlement.settledOn).toLocaleDateString()}</p>
-                            <p className="font-bold text-lg mt-2">Settlement Amount: ₹{settlement.settlementAmount.toFixed(2)}</p>
-                        </div>
-                    ))}
+             {distributorSettlements.length > 0 ? (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                        <thead>
+                            <tr className="border-b border-light-outline/50 dark:border-dark-outline/50">
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Settlement Date</th>
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Period</th>
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Total Sales</th>
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Distributor Margin</th>
+                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Settlement Amount</th>
+                            </tr>
+                        </thead>
+                         <tbody className="divide-y divide-light-outline/50 dark:divide-dark-outline/50">
+                             {distributorSettlements.map(settlement => (
+                                <tr key={settlement.id} className="hover:bg-black/5 dark:hover:bg-white/5">
+                                    <td className="p-3 whitespace-nowrap">{settlement.settledOn}</td>
+                                    <td className="p-3 whitespace-nowrap">{`${settlement.periodStartDate} to ${settlement.periodEndDate}`}</td>
+                                    <td className="p-3 whitespace-nowrap">{settlement.totalSalesValue.toFixed(2)}</td>
+                                    <td className="p-3 whitespace-nowrap">{settlement.finalMargin.toFixed(2)}</td>
+                                    <td className="p-3 whitespace-nowrap font-bold">{settlement.settlementAmount.toFixed(2)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
-            ) : (
-                <div className="text-center py-10">
-                    <FileText size={40} className="mx-auto text-light-text-secondary dark:text-dark-text-secondary"/>
-                    <p className="mt-4 text-sm text-light-text-secondary dark:text-dark-text-secondary">No settlements found for this distributor.</p>
-                </div>
-            )}
+            ) : <p>No settlements found for this distributor.</p>}
         </div>
-    )
-}
+    );
+};
 
+// SettlementModal
 const SettlementModal: React.FC<{ distributor: Customer, sales: Sale[], onSave: (settlement: DistributorSettlement) => void, onClose: () => void }> = ({ distributor, sales, onSave, onClose }) => {
     const { t } = useTranslation();
-    const today = new Date();
-    const firstOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0];
-    const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0];
-
-    const [startDate, setStartDate] = useState(firstOfLastMonth);
-    const [endDate, setEndDate] = useState(endOfLastMonth);
-    const [adjustments, setAdjustments] = useState(0);
-
+    const [selectedSaleIds, setSelectedSaleIds] = useState<string[]>([]);
+    
     const unsettledSales = useMemo(() => {
-        return sales.filter(s => 
-            s.distributorId === distributor.id && 
-            !s.settlementId && 
-            s.date >= startDate && 
-            s.date <= endDate
-        );
-    }, [sales, distributor.id, startDate, endDate]);
+        return sales.filter(s => s.distributorId === distributor.id && !s.settlementId);
+    }, [sales, distributor.id]);
 
-    const calculations = useMemo(() => {
-        const totalCustomerSubTotal = unsettledSales.reduce((sum, sale) => sum + sale.subTotal, 0);
-        const totalDistributorCost = unsettledSales.reduce((sum, sale) => {
-            return sum + sale.items.reduce((itemSum, item) => itemSum + (item.costToDistributor || item.price) * item.quantity, 0)
-        }, 0);
+    const handleToggleSale = (saleId: string) => {
+        setSelectedSaleIds(prev => prev.includes(saleId) ? prev.filter(id => id !== saleId) : [...prev, saleId]);
+    };
+    
+    const salesForSettlement = useMemo(() => {
+        return unsettledSales.filter(s => selectedSaleIds.includes(s.id));
+    }, [unsettledSales, selectedSaleIds]);
 
-        const finalMargin = totalCustomerSubTotal - totalDistributorCost;
-        const settlementAmount = finalMargin - adjustments;
-        return { totalCustomerSubTotal, totalDistributorCost, finalMargin, settlementAmount };
-    }, [unsettledSales, adjustments]);
-
-    const handleSave = () => {
-        if (unsettledSales.length === 0) return alert("No sales to settle in this period.");
+    const { totalAmountCollected, amountBilledToDistributor, finalMargin } = useMemo(() => {
+        let collected = 0;
+        let billed = 0;
         
+        salesForSettlement.forEach(sale => {
+            const salePaymentsTotal = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+            collected += salePaymentsTotal;
+            
+            const saleDistributorCost = sale.items.reduce((sum, item) => sum + ((item.costToDistributor || item.price) * item.quantity), 0);
+            billed += saleDistributorCost;
+        });
+
+        const margin = collected - billed;
+        return { totalAmountCollected: collected, amountBilledToDistributor: billed, finalMargin: margin };
+    }, [salesForSettlement]);
+
+    const handleConfirmSettlement = () => {
+        if (selectedSaleIds.length === 0) return;
+        
+        const dates = salesForSettlement.map(s => new Date(s.date).getTime());
+        const startDate = new Date(Math.min(...dates)).toISOString().split('T')[0];
+        const endDate = new Date(Math.max(...dates)).toISOString().split('T')[0];
+
         const newSettlement: DistributorSettlement = {
             id: `settle_${Date.now()}`,
             distributorId: distributor.id,
             periodStartDate: startDate,
             periodEndDate: endDate,
-            settledOn: new Date().toISOString(),
-            saleIds: unsettledSales.map(s => s.id),
-            totalSalesValue: calculations.totalCustomerSubTotal,
-            totalDistributorValue: calculations.totalDistributorCost,
-            finalMargin: calculations.finalMargin,
-            adjustments: adjustments,
-            settlementAmount: calculations.settlementAmount
+            settledOn: new Date().toISOString().split('T')[0],
+            totalSalesValue: totalAmountCollected, // This now represents collected amount
+            totalDistributorValue: amountBilledToDistributor,
+            finalMargin: finalMargin,
+            adjustments: 0,
+            settlementAmount: finalMargin, // Assuming payout is the margin for now
+            saleIds: selectedSaleIds,
         };
-
         onSave(newSettlement);
     };
-    
-    const inputClass = "w-full p-2 rounded-lg border border-light-outline dark:border-dark-outline bg-transparent focus:ring-1 focus:ring-light-primary dark:focus:ring-dark-primary focus:outline-none";
 
     return (
-        <div className="fixed inset-0 bg-black/75 flex justify-center items-center z-50 p-4">
+         <div className="fixed inset-0 bg-black/75 flex justify-center items-center z-50 p-4">
             <div className="bg-light-surface dark:bg-dark-surface rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Create Settlement for {distributor.name}</h3>
+                    <h3 className="text-lg font-semibold">New Settlement for {distributor.name}</h3>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"><X size={20}/></button>
                 </div>
-                <div className="flex-grow overflow-y-auto pr-2 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className="text-sm">Start Date</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputClass} /></div>
-                        <div><label className="text-sm">End Date</label><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputClass} /></div>
+                <div className="flex-grow overflow-y-auto pr-2">
+                    <h4 className="font-medium mb-2">Select Unsettled Sales:</h4>
+                    <div className="space-y-2 max-h-64 overflow-y-auto border border-light-outline/50 dark:border-dark-outline/50 rounded-lg p-2">
+                         {unsettledSales.map(sale => (
+                            <label key={sale.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+                                <input type="checkbox" checked={selectedSaleIds.includes(sale.id)} onChange={() => handleToggleSale(sale.id)} className="h-4 w-4 rounded text-light-primary focus:ring-light-primary"/>
+                                <span>{sale.invoiceNumber} - {sale.date} - ₹{sale.totalAmount.toFixed(2)}</span>
+                            </label>
+                        ))}
                     </div>
-                    <div className="p-4 bg-black/5 dark:bg-white/5 rounded-lg space-y-2">
-                        <p className="text-sm">Found <span className="font-bold">{unsettledSales.length}</span> unsettled sale(s) in this period.</p>
-                        <div className="flex justify-between"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('distributors.settlement.customer_subtotal')}:</span> <span>₹{calculations.totalCustomerSubTotal.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('distributors.settlement.distributor_cost')}:</span> <span>- ₹{calculations.totalDistributorCost.toFixed(2)}</span></div>
-                        <div className="flex justify-between font-semibold border-t border-light-outline/50 dark:border-dark-outline/50 pt-2 mt-2"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('distributors.settlement.gross_margin')}:</span> <span>₹{calculations.finalMargin.toFixed(2)}</span></div>
-                    </div>
-                    <div>
-                        <label className="text-sm">Adjustments / Discounts (deducted from margin)</label>
-                        <input type="number" value={adjustments} onChange={e => setAdjustments(Number(e.target.value))} className={inputClass} />
-                    </div>
-                     <div className="font-bold text-lg text-right">
-                        {t('distributors.settlement.payout')}: ₹{calculations.settlementAmount.toFixed(2)}
+                     <div className="mt-6 p-4 bg-black/5 dark:bg-white/5 rounded-lg space-y-2">
+                        <div className="flex justify-between"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('distributors.settlement.collected')}:</span> <span className="font-semibold">₹{totalAmountCollected.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('distributors.settlement.billed')}:</span> <span className="font-semibold">₹{amountBilledToDistributor.toFixed(2)}</span></div>
+                        <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t border-light-outline/50 dark:border-dark-outline/50"><span>{t('distributors.settlement.margin')}:</span> <span>₹{finalMargin.toFixed(2)}</span></div>
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-light-outline/50 dark:border-dark-outline/50">
-                    <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">Cancel</button>
-                    <button onClick={handleSave} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black">Confirm & Settle</button>
+                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-light-outline/50 dark:border-dark-outline/50">
+                    <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('cancel')}</button>
+                    <button onClick={handleConfirmSettlement} disabled={selectedSaleIds.length === 0} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black disabled:opacity-50">{t('confirm')}</button>
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
+
 
 export default Distributors;

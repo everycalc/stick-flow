@@ -3,7 +3,6 @@ import { db } from '../services/db';
 import { PlusCircle, ShoppingCart, Eye, Download, Truck, CreditCard, Paperclip, Filter, Trash2, Phone, Star, Check, MessageSquare, Search, User, X } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { useTranslation } from '../hooks/useTranslation';
 import { Sale, Payment, Attachment, DispatchInfo, ItemType, StockMovementType, StockMovement, SaleItem, Product, Customer } from '../types';
 import AttachmentManager from '../components/AttachmentManager';
 
@@ -12,7 +11,6 @@ const InvoiceEditorModal: React.FC<{
     onClose: () => void;
     customers: Customer[];
 }> = ({ onSave, onClose, customers }) => {
-    const { t } = useTranslation();
     const products = db.getProducts().filter(p => p.type === ItemType.FinishedGood && !p.isDeleted);
     const distributors = customers.filter(c => c.isDistributor);
 
@@ -24,6 +22,7 @@ const InvoiceEditorModal: React.FC<{
     const [isCreatingNewCustomer, setIsCreatingNewCustomer] = useState(false);
     const [newCustomerData, setNewCustomerData] = useState({ name: '', address: '', contact: '' });
     const [saveCustomer, setSaveCustomer] = useState(true);
+    const [isDirectToDistributor, setIsDirectToDistributor] = useState(false);
 
     // Invoice state
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -63,7 +62,8 @@ const InvoiceEditorModal: React.FC<{
     
     const handleCustomerSelect = (customer: Customer) => {
         setSelectedCustomer(customer);
-        if (customer.affiliatedDistributorId) {
+        setIsDirectToDistributor(!!customer.isDistributor);
+        if (customer.affiliatedDistributorId && !customer.isDistributor) {
             setDistributorId(customer.affiliatedDistributorId);
         }
         setStep('invoice');
@@ -73,6 +73,7 @@ const InvoiceEditorModal: React.FC<{
         setNewCustomerData({ name: '', address: '', contact: '' });
         setIsCreatingNewCustomer(true);
         setSelectedCustomer(null);
+        setIsDirectToDistributor(false);
         setStep('invoice');
     };
     
@@ -152,7 +153,7 @@ const InvoiceEditorModal: React.FC<{
             dispatchDate,
             isDispatched: false,
             isPriority,
-            distributorId
+            distributorId: isDirectToDistributor ? undefined : distributorId,
         };
         onSave(newSale, customerToSave);
     };
@@ -163,7 +164,7 @@ const InvoiceEditorModal: React.FC<{
         <div className="fixed inset-0 bg-black/75 flex justify-center items-center z-50 p-4">
             <div className="bg-light-surface dark:bg-dark-surface rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">{t('sales.create_invoice')}</h3>
+                    <h3 className="text-lg font-semibold">Create Invoice</h3>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"><X size={20}/></button>
                 </div>
 
@@ -171,7 +172,7 @@ const InvoiceEditorModal: React.FC<{
                     <div className="flex flex-col h-full">
                         <div className="relative mb-4">
                            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-light-text-secondary dark:text-dark-text-secondary" />
-                           <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className={inputClass + " pl-10"} placeholder={t('sales.search_customer_placeholder')} autoFocus/>
+                           <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className={inputClass + " pl-10"} placeholder="Search by name, phone, company..." autoFocus/>
                         </div>
                         <div className="flex-grow overflow-y-auto space-y-2 pr-2">
                            {searchResults.map(cust => (
@@ -185,7 +186,7 @@ const InvoiceEditorModal: React.FC<{
                            ))}
                         </div>
                         <div className="mt-4 pt-4 border-t border-light-outline/50 dark:border-dark-outline/50">
-                            <button onClick={handleCreateNewCustomer} className="w-full bg-light-primary-container text-light-primary dark:bg-dark-primary-container dark:text-dark-primary font-semibold py-2.5 rounded-full">{t('sales.create_new_customer')}</button>
+                            <button onClick={handleCreateNewCustomer} className="w-full bg-light-primary-container text-light-primary dark:bg-dark-primary-container dark:text-dark-primary font-semibold py-2.5 rounded-full">Create New Customer</button>
                         </div>
                     </div>
                 ) : (
@@ -201,13 +202,13 @@ const InvoiceEditorModal: React.FC<{
 
                          {isCreatingNewCustomer && (
                              <div className="p-4 border border-light-outline dark:border-dark-outline rounded-lg space-y-3">
-                                <h4 className="font-semibold">{t('sales.new_customer')}</h4>
+                                <h4 className="font-semibold">New Customer Details</h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <input type="text" placeholder="Customer Name*" value={newCustomerData.name} onChange={e => setNewCustomerData({...newCustomerData, name: e.target.value})} className={inputClass} />
                                     <input type="tel" placeholder="Contact Number*" value={newCustomerData.contact} onChange={e => setNewCustomerData({...newCustomerData, contact: e.target.value})} className={inputClass} />
                                     <input type="text" placeholder="Customer Address" value={newCustomerData.address} onChange={e => setNewCustomerData({...newCustomerData, address: e.target.value})} className={inputClass} />
                                 </div>
-                                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={saveCustomer} onChange={e => setSaveCustomer(e.target.checked)} className="h-4 w-4 rounded text-light-primary focus:ring-light-primary"/>{t('sales.save_customer_prompt')}</label>
+                                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={saveCustomer} onChange={e => setSaveCustomer(e.target.checked)} className="h-4 w-4 rounded text-light-primary focus:ring-light-primary"/>Save this customer for future use?</label>
                              </div>
                          )}
                         
@@ -215,24 +216,24 @@ const InvoiceEditorModal: React.FC<{
                             <h4 className="font-medium">Items</h4>
                             {items.map((item, index) => (
                                 <div key={index} className="grid grid-cols-12 gap-2 p-2 bg-black/5 dark:bg-white/5 rounded-lg items-end">
-                                    <div className={`col-span-12 ${distributorId ? 'sm:col-span-4' : 'sm:col-span-5'}`}>
-                                        <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">{t('sales.product')}</label>
+                                    <div className={`col-span-12 ${!isDirectToDistributor && distributorId ? 'sm:col-span-4' : 'sm:col-span-5'}`}>
+                                        <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Product</label>
                                         <select value={item.productId} onChange={e => handleItemChange(index, 'productId', e.target.value)} className={inputClass}>
                                             <option value="">Select Product</option>
                                             {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                         </select>
                                     </div>
                                     <div className="col-span-4 sm:col-span-2">
-                                        <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">{t('sales.quantity')}</label>
+                                        <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Quantity</label>
                                         <input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', +e.target.value)} className={inputClass} />
                                     </div>
                                     <div className="col-span-4 sm:col-span-2">
-                                        <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">{t('sales.sale_price')}</label>
+                                        <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Sale Price</label>
                                         <input type="number" value={item.price} onChange={e => handleItemChange(index, 'price', +e.target.value)} className={inputClass} />
                                     </div>
-                                    {distributorId && (
+                                    {!isDirectToDistributor && distributorId && (
                                         <div className="col-span-4 sm:col-span-3">
-                                            <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">{t('sales.distributor_price')}</label>
+                                            <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Distributor Price</label>
                                             <input type="number" value={item.costToDistributor} onChange={e => handleItemChange(index, 'costToDistributor', +e.target.value)} className={inputClass} />
                                         </div>
                                     )}
@@ -241,30 +242,32 @@ const InvoiceEditorModal: React.FC<{
                                     </div>
                                 </div>
                             ))}
-                            <button onClick={handleAddItem} className="text-sm font-semibold text-light-primary dark:text-dark-primary hover:underline">{t('calculator.add_ingredient')}</button>
+                            <button onClick={handleAddItem} className="text-sm font-semibold text-light-primary dark:text-dark-primary hover:underline">Add Ingredient</button>
                         </div>
 
+                        {!isDirectToDistributor && (
                         <div>
-                            <label className="block text-sm font-medium mb-1">{t('sales.select_distributor')}</label>
+                            <label className="block text-sm font-medium mb-1">Select Distributor (Optional)</label>
                             <select value={distributorId || ''} onChange={e => setDistributorId(e.target.value)} className={inputClass}>
                                 <option value="">None</option>
                                 {distributors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                             </select>
                         </div>
+                        )}
                         
                         <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div><label className="block text-sm font-medium mb-1">{t('sales.delivery_charges')}</label><input type="number" value={deliveryCharges} onChange={e => setDeliveryCharges(Number(e.target.value))} className={inputClass} /></div>
+                            <div><label className="block text-sm font-medium mb-1">Delivery Charges</label><input type="number" value={deliveryCharges} onChange={e => setDeliveryCharges(Number(e.target.value))} className={inputClass} /></div>
                             <div><label className="block text-sm font-medium mb-1">Discount</label><div className="flex"><input type="number" value={discountValue} onChange={e => setDiscountValue(Number(e.target.value))} className={`${inputClass} rounded-r-none`} /><select value={discountType} onChange={e => setDiscountType(e.target.value as any)} className={`${inputClass} rounded-l-none w-20`}><option value="fixed">₹</option><option value="percentage">%</option></select></div></div>
                             <div><label className="block text-sm font-medium mb-1">Tax Rate (%)</label><input type="number" value={taxRate} onChange={e => setTaxRate(Number(e.target.value))} className={inputClass} /></div>
-                            <div><label className="block text-sm font-medium mb-1">{t('sales.dispatch_date')}</label><input type="date" value={dispatchDate} onChange={e => setDispatchDate(e.target.value)} className={inputClass} /></div>
+                            <div><label className="block text-sm font-medium mb-1">Expected Delivery Date</label><input type="date" value={dispatchDate} onChange={e => setDispatchDate(e.target.value)} className={inputClass} /></div>
                         </div>
 
                         <div className="pt-4 border-t border-light-outline/50 dark:border-dark-outline/50">
-                             <h4 className="font-medium mb-2">{t('sales.payments')}</h4>
+                             <h4 className="font-medium mb-2">Payments</h4>
                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div><label className="block text-sm font-medium mb-1">{t('sales.payment_status')}</label><select value={paymentStatus} onChange={e => setPaymentStatus(e.target.value as any)} className={inputClass}><option value="unpaid">{t('sales.status.unpaid')}</option><option value="paid">{t('sales.status.paid')}</option><option value="partial">{t('sales.status.partial')}</option><option value="advance">{t('sales.status.advance')}</option></select></div>
-                                {(paymentStatus === 'partial' || paymentStatus === 'advance') && <div><label className="block text-sm font-medium mb-1">{t('sales.amount_paid')}</label><input type="number" value={amountPaid} onChange={e => setAmountPaid(Number(e.target.value))} className={inputClass}/></div>}
-                                {(paymentStatus !== 'unpaid') && <div><label className="block text-sm font-medium mb-1">{t('sales.payment_mode')}</label><select value={paymentMode} onChange={e => setPaymentMode(e.target.value as any)} className={inputClass}><option value="cash">Cash</option><option value="online">Online</option><option value="cheque">Cheque</option></select></div>}
+                                <div><label className="block text-sm font-medium mb-1">Payment Status</label><select value={paymentStatus} onChange={e => setPaymentStatus(e.target.value as any)} className={inputClass}><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="partial">Partial</option><option value="advance">Advance</option></select></div>
+                                {(paymentStatus === 'partial' || paymentStatus === 'advance') && <div><label className="block text-sm font-medium mb-1">Amount Paid</label><input type="number" value={amountPaid} onChange={e => setAmountPaid(Number(e.target.value))} className={inputClass}/></div>}
+                                {(paymentStatus !== 'unpaid') && <div><label className="block text-sm font-medium mb-1">Payment Mode</label><select value={paymentMode} onChange={e => setPaymentMode(e.target.value as any)} className={inputClass}><option value="cash">Cash</option><option value="online">Online</option><option value="cheque">Cheque</option></select></div>}
                              </div>
                         </div>
 
@@ -276,11 +279,11 @@ const InvoiceEditorModal: React.FC<{
                             <p className="font-bold text-lg">Grand Total: ₹{totalAmount.toFixed(2)}</p>
                         </div>
                         
-                        <label className="flex items-center gap-2"><input type="checkbox" checked={isPriority} onChange={e => setIsPriority(e.target.checked)} className="h-4 w-4 rounded text-light-primary focus:ring-light-primary"/>{t('sales.priority_order')}</label>
+                        <label className="flex items-center gap-2"><input type="checkbox" checked={isPriority} onChange={e => setIsPriority(e.target.checked)} className="h-4 w-4 rounded text-light-primary focus:ring-light-primary"/>Mark as Priority Order</label>
                     </div>
                     <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-light-outline/50 dark:border-dark-outline/50">
-                        <button type="button" onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('cancel')}</button>
-                        <button type="button" onClick={handleSubmit} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black">{t('save')}</button>
+                        <button type="button" onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">Cancel</button>
+                        <button type="button" onClick={handleSubmit} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black">Save</button>
                     </div>
                     </>
                 )}
@@ -290,7 +293,6 @@ const InvoiceEditorModal: React.FC<{
 };
 
 const Sales: React.FC = () => {
-    const { t } = useTranslation();
     const [sales, setSales] = useState<Sale[]>(db.getSales());
     const [customers, setCustomers] = useState<Customer[]>(db.getCustomers());
     const products = db.getProducts();
@@ -352,7 +354,7 @@ const Sales: React.FC = () => {
         // db.setStockMovements(...) should be handled here too
         setSales(updatedSales);
         setIsInvoiceEditorOpen(false);
-        alert(t('sales.invoice_saved_success'));
+        alert('Invoice saved successfully!');
     };
     
     const handleMarkDispatched = (saleId: string) => {
@@ -370,7 +372,13 @@ const Sales: React.FC = () => {
             partial: 'bg-yellow-500/20 text-yellow-800 dark:text-yellow-200',
             advance: 'bg-blue-500/20 text-blue-800 dark:text-blue-200'
         }
-        return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${styles[status]}`}>{t(`sales.status.${status}`)}</span>;
+        const statusText = {
+            paid: "Paid",
+            unpaid: "Unpaid",
+            partial: "Partial",
+            advance: "Advance"
+        }
+        return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${styles[status]}`}>{statusText[status]}</span>;
     };
     
      const calculateTotalWeight = (items: SaleItem[]): string => {
@@ -399,14 +407,14 @@ const Sales: React.FC = () => {
         <>
             <div className="bg-light-surface dark:bg-dark-surface p-4 sm:p-6 rounded-2xl shadow-md">
                  <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-                    <h2 className="text-xl font-semibold">{t('nav.sales')}</h2>
-                    <button onClick={() => setIsInvoiceEditorOpen(true)} className="flex items-center bg-light-primary text-white dark:bg-dark-primary dark:text-black px-4 py-2 rounded-full text-sm font-semibold shadow-sm hover:opacity-90 transition"><PlusCircle size={20} className="mr-2"/> {t('sales.create_invoice')}</button>
+                    <h2 className="text-xl font-semibold">Sales</h2>
+                    <button onClick={() => setIsInvoiceEditorOpen(true)} className="flex items-center bg-light-primary text-white dark:bg-dark-primary dark:text-black px-4 py-2 rounded-full text-sm font-semibold shadow-sm hover:opacity-90 transition"><PlusCircle size={20} className="mr-2"/> Create Invoice</button>
                 </div>
                 <div className="flex items-center gap-2 mb-4">
-                    <FilterButton label={t('sales.filter.all')} filter='all' />
-                    <FilterButton label={t('sales.filter.today')} filter='today' />
-                    <FilterButton label={t('sales.filter.unpaid')} filter='unpaid' />
-                    <FilterButton label={t('sales.filter.not_dispatched')} filter='not_dispatched' />
+                    <FilterButton label="All" filter='all' />
+                    <FilterButton label="Today" filter='today' />
+                    <FilterButton label="Unpaid" filter='unpaid' />
+                    <FilterButton label="Not Dispatched" filter='not_dispatched' />
                 </div>
                  <div className="overflow-x-auto">
                     {filteredSales.length > 0 ? (
@@ -417,7 +425,7 @@ const Sales: React.FC = () => {
                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Customer</th>
                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Date</th>
                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Amount</th>
-                               <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">{t('sales.total_weight')}</th>
+                               <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Total Wt.</th>
                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Payment</th>
                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Dispatch</th>
                                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
@@ -443,13 +451,13 @@ const Sales: React.FC = () => {
                                         <td className="p-3">{calculateTotalWeight(sale.items)}</td>
                                         <td className="p-3">{getStatusChip(sale.paymentStatus)}</td>
                                         <td className="p-3">
-                                            {sale.isDispatched ? <span className="flex items-center gap-1 text-green-600 dark:text-green-400"><Check size={16}/> {t('sales.dispatched')}</span> : (
-                                                <button onClick={() => handleMarkDispatched(sale.id)} className="text-blue-600 dark:text-blue-400 font-semibold">{t('sales.mark_dispatched')}</button>
+                                            {sale.isDispatched ? <span className="flex items-center gap-1 text-green-600 dark:text-green-400"><Check size={16}/> Dispatched</span> : (
+                                                <button onClick={() => handleMarkDispatched(sale.id)} className="text-blue-600 dark:text-blue-400 font-semibold">Mark as Dispatched</button>
                                             )}
                                         </td>
                                         <td className="p-3 space-x-1">
-                                            <button onClick={() => setSelectedSale(sale)} title={t('sales.details')} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"><Eye size={18}/></button>
-                                            <button onClick={() => setWhatsAppModalState({ isOpen: true, sale: sale })} title={t('whatsapp.title')} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"><MessageSquare size={18}/></button>
+                                            <button onClick={() => setSelectedSale(sale)} title="View Details" className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"><Eye size={18}/></button>
+                                            <button onClick={() => setWhatsAppModalState({ isOpen: true, sale: sale })} title="Send a message" className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"><MessageSquare size={18}/></button>
                                         </td>
                                     </tr>
                                 )})}
@@ -480,7 +488,6 @@ const Sales: React.FC = () => {
 };
 
 const SaleDetailsModal: React.FC<{ sale: Sale; onClose: () => void; onUpdate: (updatedSale: Sale) => void }> = ({ sale, onClose, onUpdate }) => {
-    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('details');
     const [paymentAmount, setPaymentAmount] = useState(0);
     const [paymentMode, setPaymentMode] = useState<'cash'|'online'|'cheque'>('cash');
@@ -505,11 +512,11 @@ const SaleDetailsModal: React.FC<{ sale: Sale; onClose: () => void; onUpdate: (u
     return (
          <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
             <div className="bg-light-surface dark:bg-dark-surface rounded-2xl shadow-lg p-6 w-full max-w-3xl max-h-[90vh] flex flex-col">
-                <h3 className="text-lg font-semibold">{t('sales.invoice_details')}: {sale.invoiceNumber}</h3>
+                <h3 className="text-lg font-semibold">Invoice Details: {sale.invoiceNumber}</h3>
                  <div className="border-b border-light-outline/50 dark:border-dark-outline/50 mt-4">
                     <nav className="-mb-px flex space-x-6">
-                        <button onClick={() => setActiveTab('details')} className={`${activeTab === 'details' ? 'border-light-primary dark:border-dark-primary text-light-primary dark:text-dark-primary' : 'border-transparent text-light-text-secondary dark:text-dark-text-secondary'} whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors`}>{t('sales.details')}</button>
-                        <button onClick={() => setActiveTab('payments')} className={`${activeTab === 'payments' ? 'border-light-primary dark:border-dark-primary text-light-primary dark:text-dark-primary' : 'border-transparent text-light-text-secondary dark:text-dark-text-secondary'} whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors`}>{t('sales.payments')}</button>
+                        <button onClick={() => setActiveTab('details')} className={`${activeTab === 'details' ? 'border-light-primary dark:border-dark-primary text-light-primary dark:text-dark-primary' : 'border-transparent text-light-text-secondary dark:text-dark-text-secondary'} whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors`}>View Details</button>
+                        <button onClick={() => setActiveTab('payments')} className={`${activeTab === 'payments' ? 'border-light-primary dark:border-dark-primary text-light-primary dark:text-dark-primary' : 'border-transparent text-light-text-secondary dark:text-dark-text-secondary'} whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors`}>Payments</button>
                     </nav>
                 </div>
                 <div className="flex-grow overflow-y-auto mt-4 pr-2">
@@ -526,7 +533,7 @@ const SaleDetailsModal: React.FC<{ sale: Sale; onClose: () => void; onUpdate: (u
                             </div>
                              <div className="p-4 bg-black/5 dark:bg-white/5 rounded-lg space-y-2">
                                 <div className="flex justify-between"><span>Total Paid:</span> <span className="font-semibold text-green-600 dark:text-green-400">₹{totalPaid.toFixed(2)}</span></div>
-                                <div className="flex justify-between font-bold"><span>{t('sales.due_balance')}:</span> <span className="text-red-600 dark:text-red-400">₹{dueBalance.toFixed(2)}</span></div>
+                                <div className="flex justify-between font-bold"><span>Due Balance:</span> <span className="text-red-600 dark:text-red-400">₹{dueBalance.toFixed(2)}</span></div>
                             </div>
                         </div>
                      )}
@@ -537,24 +544,23 @@ const SaleDetailsModal: React.FC<{ sale: Sale; onClose: () => void; onUpdate: (u
                                 {!sale.payments.length && <p className="text-center text-sm text-light-text-secondary dark:text-dark-text-secondary py-4">No payments recorded.</p>}
                             </div>
                             <div className="p-4 border-t border-light-outline/50 dark:border-dark-outline/50 space-y-3">
-                                <h5 className="font-medium">{t('sales.add_payment')}</h5>
+                                <h5 className="font-medium">Add Payment</h5>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <input type="number" placeholder={t('sales.amount_paid')} value={paymentAmount} onChange={e => setPaymentAmount(Number(e.target.value))} className={inputClass} />
+                                    <input type="number" placeholder="Amount Paid" value={paymentAmount} onChange={e => setPaymentAmount(Number(e.target.value))} className={inputClass} />
                                     <select value={paymentMode} onChange={e => setPaymentMode(e.target.value as any)} className={inputClass}><option value="cash">Cash</option><option value="online">Online</option><option value="cheque">Cheque</option></select>
                                 </div>
-                                <button onClick={handleAddPayment} className="w-full bg-light-primary text-white dark:bg-dark-primary dark:text-black p-2 rounded-full font-semibold">{t('sales.add_payment')}</button>
+                                <button onClick={handleAddPayment} className="w-full bg-light-primary text-white dark:bg-dark-primary dark:text-black p-2 rounded-full font-semibold">Add Payment</button>
                             </div>
                         </div>
                     )}
                 </div>
-                <div className="mt-6 flex justify-end"><button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('close')}</button></div>
+                <div className="mt-6 flex justify-end"><button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">Close</button></div>
             </div>
         </div>
     );
 }
 
 const WhatsAppOptionsModal: React.FC<{ sale: Sale, customers: Customer[], products: Product[], onClose: () => void }> = ({ sale, customers, products, onClose }) => {
-    const { t } = useTranslation();
     const customer = customers.find(c => c.id === sale.customerId);
     const distributor = sale.distributorId ? customers.find(c => c.id === sale.distributorId) : null;
 
@@ -565,15 +571,15 @@ const WhatsAppOptionsModal: React.FC<{ sale: Sale, customers: Customer[], produc
 
     const messageTemplates: { key: string, title: string, condition: boolean, message: () => string }[] = [
         {
-            key: 'invoice', title: t('whatsapp.invoice_confirmation'), condition: !sale.isDispatched,
+            key: 'invoice', title: 'Invoice Confirmation', condition: !sale.isDispatched,
             message: () => `Hi ${customer?.name},\nThank you for your order! Here is a summary of your invoice ${sale.invoiceNumber}:\n\n${sale.items.map(i => `- ${products.find(p => p.id === i.productId)?.name || 'Item'} x ${i.quantity}`).join('\n')}\n\nTotal Amount: ₹${sale.totalAmount.toFixed(2)}\n\nWe will notify you once it's dispatched.`
         },
         {
-            key: 'dispatch', title: t('whatsapp.dispatch_notification'), condition: sale.isDispatched,
+            key: 'dispatch', title: 'Dispatch Notification', condition: sale.isDispatched,
             message: () => `Hi ${customer?.name}, your order ${sale.invoiceNumber} has been dispatched. Thank you for your business!`
         },
         {
-            key: 'reminder', title: t('whatsapp.payment_reminder'), condition: dueBalance > 0,
+            key: 'reminder', title: 'Payment Reminder', condition: dueBalance > 0,
             message: () => `Hi ${customer?.name}, this is a friendly reminder that a payment of ₹${dueBalance.toFixed(2)} for invoice ${sale.invoiceNumber} is due. Thank you!`
         }
     ];
@@ -591,18 +597,18 @@ const WhatsAppOptionsModal: React.FC<{ sale: Sale, customers: Customer[], produc
     return (
         <div className="fixed inset-0 bg-black/75 flex justify-center items-center z-50 p-4">
             <div className="bg-light-surface dark:bg-dark-surface rounded-2xl p-6 w-full max-w-md">
-                <h3 className="text-lg font-semibold mb-4">{t('whatsapp.title')}</h3>
+                <h3 className="text-lg font-semibold mb-4">Send a message</h3>
                 {distributor && (
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-2">{t('whatsapp.recipient')}</label>
+                        <label className="block text-sm font-medium mb-2">Recipient</label>
                         <div className="flex gap-4">
-                            <label className="flex items-center gap-2"><input type="checkbox" checked={recipients.customer} onChange={e => setRecipients({...recipients, customer: e.target.checked})} />{t('whatsapp.customer')}</label>
-                            <label className="flex items-center gap-2"><input type="checkbox" checked={recipients.distributor} onChange={e => setRecipients({...recipients, distributor: e.target.checked})} />{t('whatsapp.distributor')}</label>
+                            <label className="flex items-center gap-2"><input type="checkbox" checked={recipients.customer} onChange={e => setRecipients({...recipients, customer: e.target.checked})} />Customer</label>
+                            <label className="flex items-center gap-2"><input type="checkbox" checked={recipients.distributor} onChange={e => setRecipients({...recipients, distributor: e.target.checked})} />Distributor</label>
                         </div>
                     </div>
                 )}
                 <div className="space-y-2">
-                    <label className="block text-sm font-medium">{t('whatsapp.select_message')}</label>
+                    <label className="block text-sm font-medium">Select a message template</label>
                     {messageTemplates.filter(t => t.condition).map(template => (
                         <button key={template.key} onClick={() => sendMessage(template.message())} className="w-full text-left p-3 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10">
                             {template.title}
@@ -610,7 +616,7 @@ const WhatsAppOptionsModal: React.FC<{ sale: Sale, customers: Customer[], produc
                     ))}
                 </div>
                 <div className="mt-6 flex justify-end">
-                    <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('cancel')}</button>
+                    <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">Close</button>
                 </div>
             </div>
         </div>

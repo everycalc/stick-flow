@@ -1,12 +1,17 @@
-export enum Language {
-    EN = 'en',
-    HI = 'hi',
-    GU = 'gu',
-}
-
 export enum UserRole {
     Admin = 'admin',
     Staff = 'staff',
+}
+
+export interface NavItem {
+    to?: string;
+    label: string;
+    icon?: React.FC<any>;
+    permission?: Permission;
+    collapsible?: boolean;
+    defaultOpen?: boolean;
+    subItems?: NavItem[];
+    isHeading?: boolean;
 }
 
 export enum Permission {
@@ -29,6 +34,7 @@ export enum Permission {
     VIEW_CALCULATOR = 'VIEW_CALCULATOR',
     VIEW_BIN = 'VIEW_BIN',
     MANAGE_CUSTOMERS = 'MANAGE_CUSTOMERS',
+    VIEW_FINANCE = 'VIEW_FINANCE',
 }
 
 export interface Role {
@@ -47,6 +53,7 @@ export interface StaffMember {
         halfDay: number;
         overtimeBonus: number;
     };
+    monthlySalary?: number;
 }
 
 export interface User {
@@ -261,4 +268,23 @@ export interface DistributorSettlement {
     adjustments: number;
     settlementAmount: number;
     saleIds: string[];
+}
+
+export enum ExpenseCategory {
+    Salaries = 'salaries',
+    Rent = 'rent',
+    Electricity = 'electricity',
+    House = 'house',
+    Utilities = 'utilities',
+    Marketing = 'marketing',
+    Other = 'other',
+}
+
+export interface Expense {
+    id: string;
+    title: string;
+    amount: number;
+    category: ExpenseCategory;
+    date: string; // YYYY-MM-DD
+    notes?: string;
 }

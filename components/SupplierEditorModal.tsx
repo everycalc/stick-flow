@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from '../hooks/useTranslation';
 import { Supplier } from '../types';
 
 interface SupplierModalProps {
@@ -9,7 +8,6 @@ interface SupplierModalProps {
 }
 
 const SupplierEditorModal: React.FC<SupplierModalProps> = ({ supplier, onSave, onClose }) => {
-    const { t } = useTranslation();
     const [formData, setFormData] = useState<Omit<Supplier, 'id' | 'pendingPayment'>>({
         company_name: '',
         contact_person: '',
@@ -68,33 +66,33 @@ const SupplierEditorModal: React.FC<SupplierModalProps> = ({ supplier, onSave, o
     return (
         <div className="fixed inset-0 bg-black/75 flex justify-center items-center z-50 p-4">
             <div className="bg-light-surface dark:bg-dark-surface rounded-2xl p-6 w-full max-w-lg max-h-[90vh] flex flex-col">
-                <h3 className="text-lg font-semibold mb-4">{supplier ? t('suppliers.edit') : t('suppliers.add')}</h3>
+                <h3 className="text-lg font-semibold mb-4">{supplier ? 'Edit Supplier' : 'Add Supplier'}</h3>
                 <div className="flex-grow overflow-y-auto pr-2 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium mb-1">{t('suppliers.company_name')}</label>
+                        <label className="block text-sm font-medium mb-1">Company Name</label>
                         <input type="text" name="company_name" value={formData.company_name} onChange={handleChange} className={inputClass} />
                     </div>
                      <div>
-                        <label className="block text-sm font-medium mb-1">{t('suppliers.contact_person')}</label>
+                        <label className="block text-sm font-medium mb-1">Contact Person</label>
                         <input type="text" name="contact_person" value={formData.contact_person} onChange={handleChange} className={inputClass} />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1">{t('suppliers.phone')}</label>
+                            <label className="block text-sm font-medium mb-1">Phone Number</label>
                             <input type="text" name="phone" value={formData.phone} onChange={handleChange} className={inputClass} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">{t('suppliers.whatsapp')}</label>
+                            <label className="block text-sm font-medium mb-1">WhatsApp Number</label>
                             <input type="text" name="whatsapp" value={formData.whatsapp} onChange={handleChange} disabled={formData.whatsapp_same_as_phone} className={`${inputClass} disabled:opacity-50`} />
                             <label className="flex items-center gap-2 mt-2 text-xs">
                                 <input type="checkbox" name="whatsapp_same_as_phone" checked={formData.whatsapp_same_as_phone} onChange={handleChange} className="h-4 w-4 rounded text-light-primary focus:ring-light-primary"/>
-                                {t('suppliers.whatsapp_same')}
+                                Same as Phone
                             </label>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1">{t('suppliers.city')}</label>
+                            <label className="block text-sm font-medium mb-1">City</label>
                             <input type="text" name="city" value={formData.city} onChange={handleChange} className={inputClass} />
                         </div>
                         <div>
@@ -108,8 +106,8 @@ const SupplierEditorModal: React.FC<SupplierModalProps> = ({ supplier, onSave, o
                     </div>
                 </div>
                  <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-light-outline/50 dark:border-dark-outline/50">
-                    <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('cancel')}</button>
-                    <button onClick={handleSubmit} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black">{t('save')}</button>
+                    <button onClick={onClose} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">Cancel</button>
+                    <button onClick={handleSubmit} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black">Save</button>
                 </div>
             </div>
         </div>

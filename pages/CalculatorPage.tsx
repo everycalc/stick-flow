@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useTranslation } from '../hooks/useTranslation';
 import { db } from '../services/db';
 import { Product, ItemType, Recipe, RecipeItem } from '../types';
 import { Plus, Trash2, X, Edit, Copy } from 'lucide-react';
@@ -11,7 +10,6 @@ interface Ingredient {
 }
 
 const CalculatorPage: React.FC = () => {
-    const { t } = useTranslation();
     const [products, setProducts] = useState(() => db.getProducts());
     const [recipes, setRecipes] = useState(() => db.getRecipes());
 
@@ -184,11 +182,11 @@ const CalculatorPage: React.FC = () => {
             <div className="lg:col-span-2 bg-light-surface dark:bg-dark-surface p-4 sm:p-6 rounded-2xl shadow-md">
                 <h1 className="text-xl font-bold mb-6">{editingRecipeId ? 'Edit Formula' : 'Create New Formula'}</h1>
                 <div className="mb-6">
-                    <label className="block text-sm font-medium mb-1">{t('calculator.recipe_name')}</label>
+                    <label className="block text-sm font-medium mb-1">Formula Name</label>
                     <input type="text" value={recipeName} onChange={e => setRecipeName(e.target.value)} className={inputClass} placeholder="e.g., Premium Rose Formula" />
                 </div>
 
-                <h2 className="text-lg font-semibold mb-2">{t('calculator.ingredients')}</h2>
+                <h2 className="text-lg font-semibold mb-2">Ingredients</h2>
                 <div className="space-y-3">
                     {ingredients.map((ing) => {
                         const cost = getCostForIngredient(ing);
@@ -218,18 +216,18 @@ const CalculatorPage: React.FC = () => {
                     )})}
                 </div>
                 <button onClick={addIngredient} className="flex items-center gap-2 mt-4 text-sm font-semibold text-light-primary dark:text-dark-primary hover:underline">
-                    <Plus size={16}/> {t('calculator.add_ingredient')}
+                    <Plus size={16}/> Add Ingredient
                 </button>
 
                 <div className="mt-8 pt-4 border-t border-light-outline/50 dark:border-dark-outline/50 flex flex-col items-end gap-2">
-                    <div className="text-lg"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('calculator.yields')}: </span><span className="font-bold text-xl">{totalBatchWeightKg.toFixed(3)} kg</span></div>
-                    <div className="text-lg"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('calculator.total_cost')}: </span><span className="font-bold text-xl">₹{totalCost.toFixed(2)}</span></div>
-                    <div className="text-base"><span className="text-light-text-secondary dark:text-dark-text-secondary">{t('calculator.cost_per_unit')}: </span><span className="font-bold">₹{costPerKg.toFixed(2)}</span></div>
+                    <div className="text-lg"><span className="text-light-text-secondary dark:text-dark-text-secondary">Total Batch Weight: </span><span className="font-bold text-xl">{totalBatchWeightKg.toFixed(3)} kg</span></div>
+                    <div className="text-lg"><span className="text-light-text-secondary dark:text-dark-text-secondary">Total Batch Cost: </span><span className="font-bold text-xl">₹{totalCost.toFixed(2)}</span></div>
+                    <div className="text-base"><span className="text-light-text-secondary dark:text-dark-text-secondary">Cost per KG: </span><span className="font-bold">₹{costPerKg.toFixed(2)}</span></div>
                 </div>
 
                 <div className="mt-6 flex justify-end">
                     <button onClick={handleSave} className="bg-light-primary text-white dark:bg-dark-primary dark:text-black px-6 py-2.5 text-sm font-semibold rounded-full shadow-sm hover:opacity-90 transition">
-                        {editingRecipeId ? 'Update Formula' : t('calculator.save_recipe')}
+                        {editingRecipeId ? 'Update Formula' : 'Save Formula & Create Product'}
                     </button>
                 </div>
             </div>
@@ -238,18 +236,18 @@ const CalculatorPage: React.FC = () => {
                  <div className="fixed inset-0 bg-black/75 flex justify-center items-center z-50 p-4">
                     <div className="bg-light-surface dark:bg-dark-surface rounded-2xl p-6 w-full max-w-md">
                         <div className="flex justify-between items-center mb-4">
-                             <h3 className="text-lg font-semibold">{t('calculator.create_product_title')}</h3>
+                             <h3 className="text-lg font-semibold">Create New Finished Product</h3>
                              <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"><X size={20}/></button>
                         </div>
                         <div className="space-y-4">
-                             <div><label className="block text-sm font-medium mb-1">{t('calculator.product_name')}</label><input type="text" value={newProductData.name} onChange={e => setNewProductData({...newProductData, name: e.target.value})} className={inputClass}/></div>
-                             <div><label className="block text-sm font-medium mb-1">{t('calculator.product_unit')}</label><input type="text" value={newProductData.unit} onChange={e => setNewProductData({...newProductData, unit: e.target.value})} className={inputClass} /></div>
-                             <div><label className="block text-sm font-medium mb-1">{t('calculator.low_stock_threshold')}</label><input type="number" value={newProductData.lowStockThreshold} onChange={e => setNewProductData({...newProductData, lowStockThreshold: parseInt(e.target.value) || 0})} className={inputClass} /></div>
-                             <div><label className="block text-sm font-medium mb-1">{t('calculator.selling_price')}</label><input type="number" value={newProductData.selling_price} onChange={e => setNewProductData({...newProductData, selling_price: parseFloat(e.target.value) || 0})} className={inputClass} /></div>
+                             <div><label className="block text-sm font-medium mb-1">Product Name</label><input type="text" value={newProductData.name} onChange={e => setNewProductData({...newProductData, name: e.target.value})} className={inputClass}/></div>
+                             <div><label className="block text-sm font-medium mb-1">Product Unit (e.g., packet, box)</label><input type="text" value={newProductData.unit} onChange={e => setNewProductData({...newProductData, unit: e.target.value})} className={inputClass} /></div>
+                             <div><label className="block text-sm font-medium mb-1">Low Stock Threshold</label><input type="number" value={newProductData.lowStockThreshold} onChange={e => setNewProductData({...newProductData, lowStockThreshold: parseInt(e.target.value) || 0})} className={inputClass} /></div>
+                             <div><label className="block text-sm font-medium mb-1">Selling Price (per unit)</label><input type="number" value={newProductData.selling_price} onChange={e => setNewProductData({...newProductData, selling_price: parseFloat(e.target.value) || 0})} className={inputClass} /></div>
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-light-outline/50 dark:border-dark-outline/50">
-                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">{t('cancel')}</button>
-                            <button onClick={handleCreateProductAndRecipe} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black">{t('calculator.create_product')}</button>
+                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10">Cancel</button>
+                            <button onClick={handleCreateProductAndRecipe} className="px-4 py-2 rounded-full bg-light-primary text-white dark:bg-dark-primary dark:text-black">Create Product</button>
                         </div>
                     </div>
                 </div>
